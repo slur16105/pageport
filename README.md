@@ -1,4 +1,11 @@
-# vinext-starter
+# PAGEPORT
+
+전문 지식이 오가는 디지털 문서 마켓입니다.
+
+- 제품 범위와 출시 기준: [PRD.md](./PRD.md)
+- 기술과 운영 기준: [기술선택.md](./기술선택.md)
+
+## Development
 
 A clean full-stack starter running on
 [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
