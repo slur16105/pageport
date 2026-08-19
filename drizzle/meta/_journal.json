@@ -1,0 +1,69 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1787114487993,
+      "tag": "0000_steady_killmonger",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1787114922753,
+      "tag": "0001_sweet_vampiro",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1787115375731,
+      "tag": "0002_sparkling_vance_astro",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1787118275031,
+      "tag": "0003_cute_maverick",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1787120020996,
+      "tag": "0004_tearful_the_renegades",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1787122099291,
+      "tag": "0005_hot_ben_urich",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1787124505249,
+      "tag": "0006_mushy_trauma",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1787124717905,
+      "tag": "0007_careful_pete_wisdom",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1787125547662,
+      "tag": "0008_productive_thunderbolt_ross",
+      "breakpoints": true
+    }
+  ]
+}
