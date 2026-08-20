@@ -2384,9 +2384,6 @@ footer small {
     linear-gradient(90deg, rgba(23, 35, 29, 0.035) 1px, transparent 1px), #e8dfd1;
   background-size: 36px 36px;
 }
-.access-page > footer {
-  background: var(--cream);
-}
 .access-shell {
   flex: 1;
   width: min(1120px, 90vw);
