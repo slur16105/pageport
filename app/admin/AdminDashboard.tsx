@@ -72,17 +72,18 @@ async function uploadPdf(file: File, onProgress: (percent: number) => void) {
     endpoint?: string;
     bucketName?: string;
     objectKey?: string;
-    authorization?: string;
+    signature?: string;
     error?: string;
   };
-  if (!ticketResponse.ok || !ticket.endpoint || !ticket.bucketName || !ticket.objectKey || !ticket.authorization)
+  if (!ticketResponse.ok || !ticket.endpoint || !ticket.bucketName || !ticket.objectKey || !ticket.signature)
     throw new Error(ticket.error ?? "업로드를 준비하지 못했습니다.");
-  const { endpoint, bucketName, objectKey, authorization } = ticket;
+  const { endpoint, bucketName, objectKey, signature } = ticket;
   await new Promise<void>((resolve, reject) => {
     const upload = new tus.Upload(file, {
       endpoint,
       retryDelays: [0, 1000, 3000, 5000],
-      headers: { authorization: `Bearer ${authorization}`, "x-upsert": "true" },
+      // 서버가 이 PDF 한 개에만 발급한 서명을 보내므로 Supabase 로그인 없이도 안전하게 올릴 수 있습니다.
+      headers: { "x-signature": signature, "x-upsert": "true" },
       metadata: { bucketName, objectName: objectKey, contentType: "application/pdf", cacheControl: "3600" },
       uploadSize: file.size,
       removeFingerprintOnSuccess: true,
