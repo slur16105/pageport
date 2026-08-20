@@ -1997,6 +1997,28 @@ footer small {
   margin-bottom: 32px;
   color: #5c6860;
 }
+.admin-action-alert {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid #c87861;
+  background: #fff4ed;
+  color: #4d3a33;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.admin-action-alert strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #9f3d27;
+  font-size: 15px;
+}
+.admin-action-alert p {
+  margin: 5px 0 0;
+}
+.admin-action-alert b {
+  margin-right: 4px;
+  color: var(--ink);
+}
 .admin-login label > span {
   display: block;
   margin-bottom: 9px;

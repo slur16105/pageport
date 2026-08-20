@@ -9,6 +9,7 @@ import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import * as Dialog from "@radix-ui/react-dialog";
 import { ExternalLink, FileUp, Menu, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { TurnstileWidget } from "../../components/TurnstileWidget";
+import { explainAdminUploadError, type AdminUploadIssue } from "../../lib/admin-upload-errors";
 import { PRODUCT_CATEGORIES, PRODUCT_LIMITS, productIncludeItems } from "../../lib/product-limits";
 
 type AdminProduct = {
@@ -122,18 +123,20 @@ async function uploadPdf(file: File, onProgress: (percent: number) => void) {
     endpoint?: string;
     bucketName?: string;
     objectKey?: string;
-    signature?: string;
+    authorization?: string;
+    code?: string;
     error?: string;
   };
-  if (!ticketResponse.ok || !ticket.endpoint || !ticket.bucketName || !ticket.objectKey || !ticket.signature)
-    throw new Error(ticket.error ?? "업로드를 준비하지 못했습니다.");
-  const { endpoint, bucketName, objectKey, signature } = ticket;
+  if (!ticketResponse.ok || !ticket.endpoint || !ticket.bucketName || !ticket.objectKey || !ticket.authorization)
+    throw new Error(ticket.code ?? ticket.error ?? "업로드를 준비하지 못했습니다.");
+  const { endpoint, bucketName, objectKey, authorization } = ticket;
   await new Promise<void>((resolve, reject) => {
     const upload = new tus.Upload(file, {
       endpoint,
       retryDelays: [0, 1000, 3000, 5000],
-      // 서버가 이 PDF 한 개에만 발급한 서명을 보내므로 Supabase 로그인 없이도 안전하게 올릴 수 있습니다.
-      headers: { "x-signature": signature, "x-upsert": "true" },
+      // TUS가 요구하는 anon JWT로 인증하고, 실제 저장 위치는 일회용 업로드 허가증과 RLS가 제한합니다.
+      // 매번 새 UUID 경로를 쓰므로 기존 파일 덮어쓰기 권한은 요청하지 않습니다.
+      headers: { authorization: `Bearer ${authorization}` },
       metadata: { bucketName, objectName: objectKey, contentType: "application/pdf", cacheControl: "3600" },
       uploadSize: file.size,
       removeFingerprintOnSuccess: true,
@@ -169,6 +172,7 @@ export function AdminDashboard() {
   const [refundReviewed, setRefundReviewed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("관리자 확인 중…");
+  const [uploadIssue, setUploadIssue] = useState<AdminUploadIssue | null>(null);
   const [turnstileToken, setTurnstileToken] = useState("");
   const includeItems = productIncludeItems(form.includes);
   const includesInvalid =
@@ -345,6 +349,7 @@ export function AdminDashboard() {
     setForm({ ...product, includes: product.includes.join("\n") });
     setEditing(true);
     setFile(null);
+    setUploadIssue(null);
     setMessage(`${product.title} 정보를 불러왔습니다.`);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -353,6 +358,7 @@ export function AdminDashboard() {
     setForm(emptyForm);
     setEditing(false);
     setFile(null);
+    setUploadIssue(null);
     setMessage("새 상품 정보를 입력해 주세요. 먼저 작성 중으로 저장할 수 있습니다.");
   }
 
@@ -360,6 +366,7 @@ export function AdminDashboard() {
     // 새 PDF가 있으면 먼저 파일을 올리고, 그 저장 위치와 입력한 상품 정보를 함께 저장합니다.
     event.preventDefault();
     setBusy(true);
+    setUploadIssue(null);
     setMessage(file ? "PDF 업로드를 준비하고 있습니다." : "상품을 안전하게 저장하고 있습니다.");
     try {
       const body = new FormData();
@@ -378,9 +385,11 @@ export function AdminDashboard() {
       setForm({ ...data.product, includes: data.product.includes.join("\n") });
       setEditing(true);
       setFile(null);
+      setUploadIssue(null);
       setMessage(data.product.status === "published" ? "상품을 저장하고 판매를 시작했습니다." : "상품을 저장했습니다.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "상품을 저장하지 못했습니다.");
+      setUploadIssue(explainAdminUploadError(error));
+      setMessage("");
     } finally {
       setBusy(false);
     }
@@ -681,6 +690,15 @@ export function AdminDashboard() {
               <p className="checkout-message" role="status">
                 {message}
               </p>
+            )}
+            {uploadIssue && (
+              <section className="admin-action-alert" role="alert" aria-live="assertive">
+                <strong>{uploadIssue.title}</strong>
+                <p>{uploadIssue.description}</p>
+                <p>
+                  <b>다음 단계</b> {uploadIssue.action}
+                </p>
+              </section>
             )}
           </section>
           <aside className="admin-products">
