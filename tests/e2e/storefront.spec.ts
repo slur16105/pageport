@@ -36,3 +36,14 @@ test("상품 카테고리 필터와 정책 페이지의 공통 메뉴가 동작�
   await expect(page.getByRole("contentinfo")).toBeVisible();
   await expect(page.getByRole("link", { name: "페이지포트 홈" }).first()).toBeVisible();
 });
+
+test("히어로 문서가 등장하고 마우스에 가볍게 반응한다", async ({ page }) => {
+  await page.goto("/");
+  const art = page.locator(".hero-art");
+  await expect(art).toBeVisible();
+  const box = await art.boundingBox();
+  if (!box) throw new Error("히어로 그래픽 영역을 찾을 수 없습니다.");
+
+  await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.35);
+  await expect.poll(() => art.evaluate((element) => element.style.getPropertyValue("--hero-front-x"))).not.toBe("0px");
+});

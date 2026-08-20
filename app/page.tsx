@@ -1,5 +1,6 @@
 import { listPublishedProducts } from "../lib/catalog-products";
 import { ProductCatalog } from "../components/ProductCatalog";
+import { HeroSection } from "../components/HeroSection";
 import { SiteFooter } from "../components/SiteFooter";
 import { SiteHeader } from "../components/SiteHeader";
 
@@ -11,56 +12,7 @@ export default async function Home() {
     <main>
       <SiteHeader />
 
-      <section className="hero" id="top">
-        <div className="hero-copy">
-          <p className="eyebrow">실무에 바로 쓰는 디지털 문서</p>
-          <h1>
-            전문 지식이,
-            <br />
-            <em>새로운 기회로.</em>
-          </h1>
-          <p className="hero-description">
-            일과 공부, 생활에 바로 쓰는 PDF를 발견하세요. 회원가입 없이 이메일을 확인하고 결제하면 화면과 이메일에서
-            바로 받을 수 있습니다.
-          </p>
-          <div className="hero-actions">
-            <a className="primary-button" href="#products">
-              PDF 둘러보기
-            </a>
-            <a className="text-link" href="/downloads/reissue">
-              구매 파일 다시 받기 <span>→</span>
-            </a>
-          </div>
-          <div className="trust-row" aria-label="서비스 장점">
-            <span>✓ 회원가입 없는 구매</span>
-            <span>✓ 결제 즉시 다운로드</span>
-            <span>✓ 이메일 인증 재발급</span>
-          </div>
-        </div>
-        <div className="hero-art" aria-label="페이지포트 PDF 상품 미리보기">
-          <div className="sun-shape" />
-          <div className="paper paper-back">
-            <small>MONTHLY</small>
-            <strong>08</strong>
-            <div className="paper-lines" />
-          </div>
-          <div className="paper paper-front">
-            <div className="paper-brand">PAGEPORT</div>
-            <p>
-              WEEKLY
-              <br />
-              FOCUS
-            </p>
-            <span>
-              Made by creators.
-              <br />
-              Ready for you.
-            </span>
-            <div className="paper-grid" />
-          </div>
-          <div className="scribble">✦</div>
-        </div>
-      </section>
+      <HeroSection />
 
       <ProductCatalog products={products} />
 
