@@ -51,7 +51,9 @@ export function ReissueDownloadForm() {
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? "인증번호를 보내지 못했습니다.");
       setSent(true);
-      setMessage("구매 이메일로 인증번호를 보냈습니다. 10분 안에 입력해 주세요.");
+      setMessage(
+        "구매 내역이 확인되면 입력하신 이메일로 인증번호를 보내드립니다. 메일이 없다면 주소와 스팸함을 확인해 주세요.",
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "인증번호를 보내지 못했습니다.");
     } finally {

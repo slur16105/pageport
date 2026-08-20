@@ -17,9 +17,8 @@ export default function ReissueDownloadPage() {
         <div className="reissue-copy">
           <p className="eyebrow">RE-DOWNLOAD</p>
           <h1>
-            구매한 PDF를
-            <br />
-            다시 받아보세요.
+            <span>구매한 PDF를</span>
+            <span>다시 받아보세요.</span>
           </h1>
           <p>구매 이메일을 확인하면 구매했던 상품을 보여드립니다. 주문번호를 기억하거나 다시 결제할 필요는 없습니다.</p>
         </div>
