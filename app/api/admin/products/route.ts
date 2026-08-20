@@ -3,26 +3,26 @@ import { z } from "zod";
 import { isAdminRequest } from "../../../../lib/admin-auth";
 import { prisma } from "../../../../lib/prisma";
 import { productObjectKey } from "../../../../lib/product-files";
+import { PRODUCT_LIMITS, productIncludeItems } from "../../../../lib/product-limits";
 import { PRIVATE_PDF_BUCKET, supabaseAdmin } from "../../../../lib/supabase";
 
 const productSchema = z.object({
   slug: z.string().optional(),
-  title: z.string().min(1),
-  sellerName: z.string().min(1),
-  category: z.string().min(1),
-  description: z.string().min(1),
-  summary: z.string().min(1),
-  mark: z.string().min(1).max(12),
+  title: z.string().trim().min(1).max(PRODUCT_LIMITS.title),
+  sellerName: z.string().trim().min(1).max(PRODUCT_LIMITS.sellerName),
+  category: z.string().trim().min(1).max(PRODUCT_LIMITS.category),
+  description: z.string().trim().min(1).max(PRODUCT_LIMITS.description),
+  summary: z.string().trim().min(1).max(PRODUCT_LIMITS.summary),
+  mark: z.string().trim().min(1).max(PRODUCT_LIMITS.mark),
   accent: z.string().min(1),
   status: z.enum(["draft", "published", "paused"]),
-  amount: z.coerce.number().int().min(100),
-  pages: z.coerce.number().int().min(1),
-  includes: z.string().transform((value) =>
-    value
-      .split("\n")
-      .map((item) => item.trim())
-      .filter(Boolean),
-  ),
+  amount: z.coerce.number().int().min(PRODUCT_LIMITS.amountMin).max(PRODUCT_LIMITS.amountMax),
+  pages: z.coerce.number().int().min(PRODUCT_LIMITS.pagesMin).max(PRODUCT_LIMITS.pagesMax),
+  includes: z
+    .string()
+    .max(PRODUCT_LIMITS.includesText)
+    .transform(productIncludeItems)
+    .pipe(z.array(z.string().max(PRODUCT_LIMITS.includeItem)).min(1).max(PRODUCT_LIMITS.includesCount)),
   uploadedObjectKey: z.string().optional(),
   uploadedFileSize: z.string().optional(),
 });
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof z.ZodError
-        ? "필수 상품 정보를 다시 확인해 주세요."
+        ? "입력 글자 수와 판매가·쪽수 범위를 다시 확인해 주세요."
         : error instanceof Error
           ? error.message
           : "상품 저장 중 문제가 발생했습니다.";

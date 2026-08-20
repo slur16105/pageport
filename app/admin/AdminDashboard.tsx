@@ -7,6 +7,7 @@ import * as tus from "tus-js-client";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import { FileUp, RefreshCw, ShieldCheck } from "lucide-react";
 import { TurnstileWidget } from "../../components/TurnstileWidget";
+import { PRODUCT_CATEGORIES, PRODUCT_LIMITS, productIncludeItems } from "../../lib/product-limits";
 
 type AdminProduct = {
   slug: string;
@@ -60,6 +61,16 @@ const emptyForm: ProductForm = {
 };
 
 const statusLabels: Record<string, string> = { draft: "작성 중", published: "판매 중", paused: "판매 중지" };
+
+function FieldLimit({ current, maximum, unit = "자" }: { current: number; maximum: number; unit?: string }) {
+  const nearLimit = current >= maximum * 0.8;
+  return (
+    <small className={nearLimit ? "admin-field-limit near-limit" : "admin-field-limit"}>
+      {current.toLocaleString("ko-KR")} / {maximum.toLocaleString("ko-KR")}
+      {unit}
+    </small>
+  );
+}
 
 async function uploadPdf(file: File, onProgress: (percent: number) => void) {
   // 먼저 서버에서 일회용 업로드 허가를 받은 뒤, 전송이 끊겨도 이어 올릴 수 있는 방식으로 PDF를 보냅니다.
@@ -119,6 +130,10 @@ export function AdminDashboard() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("관리자 확인 중…");
   const [turnstileToken, setTurnstileToken] = useState("");
+  const includeItems = productIncludeItems(form.includes);
+  const includesInvalid =
+    includeItems.length > PRODUCT_LIMITS.includesCount ||
+    includeItems.some((item) => item.length > PRODUCT_LIMITS.includeItem);
 
   useEffect(() => {
     // 화면이 처음 열리면 기존 관리자 로그인이 살아 있는지 확인하고, 맞으면 상품 목록을 바로 불러옵니다.
@@ -431,25 +446,37 @@ export function AdminDashboard() {
                 <input
                   value={form.title}
                   onChange={(event) => setForm({ ...form, title: event.target.value })}
+                  maxLength={PRODUCT_LIMITS.title}
                   required
                 />
-                <small>상품 주소는 저장할 때 자동으로 만들어집니다.</small>
+                <span className="admin-field-help">
+                  <small>상품 주소는 저장할 때 자동으로 만들어집니다.</small>
+                  <FieldLimit current={form.title.length} maximum={PRODUCT_LIMITS.title} />
+                </span>
               </label>
               <label>
                 <span>판매자명</span>
                 <input
                   value={form.sellerName}
                   onChange={(event) => setForm({ ...form, sellerName: event.target.value })}
+                  maxLength={PRODUCT_LIMITS.sellerName}
                   required
                 />
+                <FieldLimit current={form.sellerName.length} maximum={PRODUCT_LIMITS.sellerName} />
               </label>
               <label>
                 <span>카테고리</span>
-                <input
-                  value={form.category}
-                  onChange={(event) => setForm({ ...form, category: event.target.value })}
-                  required
-                />
+                <select value={form.category} onChange={(event) => setForm({ ...form, category: event.target.value })}>
+                  {!PRODUCT_CATEGORIES.some((category) => category === form.category) && (
+                    <option value={form.category}>{form.category}</option>
+                  )}
+                  {PRODUCT_CATEGORIES.map((category) => (
+                    <option value={category} key={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+                <small>정해진 분류를 사용하면 구매자가 상품을 더 쉽게 찾을 수 있습니다.</small>
               </label>
               <label>
                 <span>판매가</span>
@@ -457,10 +484,15 @@ export function AdminDashboard() {
                   value={form.amount}
                   onChange={(event) => setForm({ ...form, amount: Number(event.target.value) })}
                   type="number"
-                  min="100"
+                  min={PRODUCT_LIMITS.amountMin}
+                  max={PRODUCT_LIMITS.amountMax}
                   step="100"
                   required
                 />
+                <small>
+                  입력 금액: {new Intl.NumberFormat("ko-KR").format(Number.isFinite(form.amount) ? form.amount : 0)}원 ·
+                  최대 1,000,000원
+                </small>
               </label>
               <label>
                 <span>PDF 쪽수</span>
@@ -468,18 +500,21 @@ export function AdminDashboard() {
                   value={form.pages}
                   onChange={(event) => setForm({ ...form, pages: Number(event.target.value) })}
                   type="number"
-                  min="1"
+                  min={PRODUCT_LIMITS.pagesMin}
+                  max={PRODUCT_LIMITS.pagesMax}
                   required
                 />
+                <small>최대 10,000쪽</small>
               </label>
               <label>
                 <span>표지 글자</span>
                 <input
                   value={form.mark}
                   onChange={(event) => setForm({ ...form, mark: event.target.value })}
-                  maxLength={12}
+                  maxLength={PRODUCT_LIMITS.mark}
                   required
                 />
+                <FieldLimit current={form.mark.length} maximum={PRODUCT_LIMITS.mark} />
               </label>
               <label>
                 <span>표지 색상</span>
@@ -499,26 +534,34 @@ export function AdminDashboard() {
                 <input
                   value={form.description}
                   onChange={(event) => setForm({ ...form, description: event.target.value })}
+                  maxLength={PRODUCT_LIMITS.description}
                   required
                 />
+                <FieldLimit current={form.description.length} maximum={PRODUCT_LIMITS.description} />
               </label>
               <label className="wide">
                 <span>상세 설명</span>
                 <textarea
                   value={form.summary}
                   onChange={(event) => setForm({ ...form, summary: event.target.value })}
+                  maxLength={PRODUCT_LIMITS.summary}
                   rows={4}
                   required
                 />
+                <FieldLimit current={form.summary.length} maximum={PRODUCT_LIMITS.summary} />
               </label>
               <label className="wide">
                 <span>상품 구성 · 한 줄에 하나</span>
                 <textarea
                   value={form.includes}
                   onChange={(event) => setForm({ ...form, includes: event.target.value })}
+                  maxLength={PRODUCT_LIMITS.includesText}
                   rows={4}
                   required
                 />
+                <small className={includesInvalid ? "admin-field-limit invalid" : "admin-field-limit"}>
+                  {includeItems.length} / {PRODUCT_LIMITS.includesCount}개 · 항목당 최대 {PRODUCT_LIMITS.includeItem}자
+                </small>
               </label>
               <label className="wide">
                 <span>
@@ -540,7 +583,7 @@ export function AdminDashboard() {
                   <option value="paused">판매 중지</option>
                 </select>
               </label>
-              <button className="admin-save" type="submit" disabled={busy}>
+              <button className="admin-save" type="submit" disabled={busy || includesInvalid}>
                 {busy ? "저장 중…" : "상품 저장"}
               </button>
             </form>

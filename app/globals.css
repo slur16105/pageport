@@ -2067,6 +2067,29 @@ footer small {
   color: #77817b;
   font-size: 10px;
 }
+.admin-field-help {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.admin-field-help > small:first-child {
+  min-width: 0;
+}
+.admin-form .admin-field-limit {
+  margin-left: auto;
+  color: #77817b;
+  text-align: right;
+  white-space: nowrap;
+}
+.admin-form .admin-field-limit.near-limit {
+  color: #c55231;
+  font-weight: 800;
+}
+.admin-form .admin-field-limit.invalid {
+  color: #a52e22;
+  font-weight: 900;
+}
 .admin-save {
   align-self: end;
   padding: 14px;
