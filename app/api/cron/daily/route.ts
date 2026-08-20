@@ -1,6 +1,6 @@
 import { env } from "../../../../lib/env";
 import { prisma } from "../../../../lib/prisma";
-import { createDownloadGrant, downloadUrl } from "../../../../lib/download-links";
+import { downloadUrl, getOrCreatePurchaseDownloadGrant } from "../../../../lib/download-links";
 import { sendPurchaseCompleteEmail } from "../../../../lib/purchase-email";
 import { sendRefundCompleteEmail } from "../../../../lib/refund-email";
 import { sendDownloadRenewalEmail } from "../../../../lib/download-renewal-email";
@@ -15,7 +15,8 @@ async function processEmailJob(
   if (!order) throw new Error("주문을 찾을 수 없습니다.");
   if (job.jobType === "purchase_email") {
     if (order.receiptEmailSentAt) return;
-    const grant = await createDownloadGrant(order.id, order.productSlug);
+    const grant = await getOrCreatePurchaseDownloadGrant(order.id, order.productSlug);
+    if (!grant) throw new Error("기존 다운로드 주소가 만료되어 구매 이메일을 자동 재발송할 수 없습니다.");
     const emailId = await sendPurchaseCompleteEmail({
       buyerEmail: order.buyerEmail,
       productTitle: order.productTitle,

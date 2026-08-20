@@ -21,17 +21,40 @@ function downloadError(request: Request, reason: string, message: string, status
 export async function GET(request: Request, { params }: Props) {
   try {
     const token = decodeURIComponent((await params).token);
+    const tokenHash = hashDownloadToken(token);
+    const candidate = await prisma.downloadGrant.findUnique({
+      where: { tokenHash },
+      select: {
+        objectKey: true,
+        revokedAt: true,
+        expiresAt: true,
+        downloadCount: true,
+        maxDownloads: true,
+        order: { select: { status: true } },
+      },
+    });
+    if (!candidate) throw new Error("DOWNLOAD_NOT_FOUND");
+    if (candidate.revokedAt) throw new Error("DOWNLOAD_REVOKED");
+    if (candidate.expiresAt <= new Date()) throw new Error("DOWNLOAD_EXPIRED");
+    if (candidate.downloadCount >= candidate.maxDownloads) throw new Error("DOWNLOAD_LIMIT");
+    if (!["paid", "test_paid"].includes(candidate.order.status)) throw new Error("ORDER_UNAVAILABLE");
+
+    // Confirm that Storage can issue the file URL before the atomic RPC records a
+    // download. A missing file or Storage outage must not consume the buyer's limit.
+    const { data, error } = await supabaseAdmin()
+      .storage.from(PRIVATE_PDF_BUCKET)
+      .createSignedUrl(candidate.objectKey, 60, {
+        download: candidate.objectKey.split("/").at(-1) ?? "pageport.pdf",
+      });
+    if (error || !data?.signedUrl) return downloadError(request, "missing", "PDF 파일을 찾을 수 없습니다.", 404);
+
     const result = await prisma.$queryRaw<
       Array<{ object_key: string; order_id: string; download_count: number }>
     >(Prisma.sql`
-      SELECT * FROM public.consume_download_grant(${hashDownloadToken(token)}, ${privacyHash(requestIp(request))}, ${request.headers.get("user-agent")})
+      SELECT * FROM public.consume_download_grant(${tokenHash}, ${privacyHash(requestIp(request))}, ${request.headers.get("user-agent")})
     `);
     const record = result[0];
     if (!record) return downloadError(request, "unavailable", "다운로드 권한을 확인할 수 없습니다.", 403);
-    const { data, error } = await supabaseAdmin()
-      .storage.from(PRIVATE_PDF_BUCKET)
-      .createSignedUrl(record.object_key, 60, { download: record.object_key.split("/").at(-1) ?? "pageport.pdf" });
-    if (error || !data?.signedUrl) return downloadError(request, "missing", "PDF 파일을 찾을 수 없습니다.", 404);
     return new Response(null, {
       status: 303,
       headers: { Location: data.signedUrl, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" },

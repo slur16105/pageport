@@ -10,10 +10,10 @@
 - 이메일 확인 후 구매 목록 조회와 다운로드 링크 재발급
 - Supabase 비공개 PDF, 약 1분 Signed URL, 원자적 다운로드 횟수 기록
 - Resend + React Email 인증·구매·재발급·환불 이메일
-- 관리자 이메일 OTP, 상품·TUS PDF 업로드·주문·다운로드·환불 관리
-- Supabase PostgreSQL, Prisma, SQL Migration, RLS, RPC
+- 관리자 이메일 OTP, 모든 원본 PDF의 TUS 업로드, 주문·다운로드·환불 관리
+- Supabase PostgreSQL, Prisma, SQL Migration, RLS, 다운로드·요청 제한 RPC
 - 요청 제한, 선택형 Turnstile, 보안 헤더, 선택형 Sentry·Analytics
-- Vercel Cron 작업 장부, GitHub Actions, Dependabot
+- 실패 이메일 재처리·만료 자료 정리용 Vercel Cron 작업 장부, GitHub Actions, Dependabot
 
 ## 로컬 실행
 
@@ -32,6 +32,8 @@ pnpm dev
 
 ## 검사
 
+현재 자동검사는 다운로드·환불 정책, 공통 버튼, 상품 상세·재다운로드·관리자 화면의 기본 이동과 코드 품질을 확인합니다. 이메일 인증부터 시험 결제·다운로드·환불까지의 전체 연결 검사는 정식 오픈 전 확대합니다.
+
 ```bash
 pnpm lint
 pnpm test
@@ -46,3 +48,14 @@ pnpm test:e2e
 - [확정 기술 스택](./기술스택_재검토_초안.md): 기술별 상세 이유와 보안 기준
 
 운영 배포는 GitHub Pull Request 검사와 Vercel Preview를 확인한 뒤 사용자가 직접 `main`에 병합하는 방식입니다.
+
+현재 코드는 공개 GitHub 저장소의 `codex/full-rebuild` 브랜치에 있으며, Vercel 시험 배포 연결과 검증을 진행하고 있습니다. 실제 운영에는 시험 결제 키를 사용하지 않습니다.
+
+## 구축 후 체크리스트
+
+- Vercel Preview 환경변수와 시험 주소 확인
+- 토스 시험 웹훅 주소와 Vercel Cron 실행 확인
+- 필요 시 Turnstile·Sentry·Vercel WAF·Analytics·GA4 연결
+- 실제 도메인·고객지원 이메일 결정과 Resend 발신 도메인 인증
+- 정식 오픈용 토스 계약·라이브 키, 운영 Supabase와 백업·복구 준비
+- 실제 상품·미리보기와 사업자·법률 정보 확정

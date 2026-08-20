@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { scrubTelemetryEvent } from "./lib/privacy";
 
 if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
   Sentry.init({
@@ -7,5 +8,7 @@ if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
     sendDefaultPii: false,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
+    beforeSend: scrubTelemetryEvent,
+    beforeSendTransaction: scrubTelemetryEvent,
   });
 }

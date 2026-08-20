@@ -13,6 +13,7 @@ export function PaymentSuccess({ payment }: { payment: PaymentParams | null }) {
 
   useEffect(() => {
     if (!payment) return;
+    window.history.replaceState(window.history.state, "", window.location.pathname);
     let active = true;
     async function confirmPayment() {
       try {

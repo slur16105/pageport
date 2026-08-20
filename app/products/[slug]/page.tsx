@@ -35,9 +35,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <a href="/#guide">이용 방법</a>
           <a href="/#faq">구매 안내</a>
         </nav>
-        <button className="header-button" type="button">
+        <a className="header-button" href="/downloads/reissue">
           내 구매함
-        </button>
+        </a>
       </header>
 
       <div className="detail-shell">

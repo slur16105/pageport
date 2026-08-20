@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createDownloadGrant, downloadUrl } from "../../../../lib/download-links";
+import { downloadUrl, getOrCreatePurchaseDownloadGrant } from "../../../../lib/download-links";
 import { env } from "../../../../lib/env";
 import { prisma } from "../../../../lib/prisma";
 import { ensureTestProductFile } from "../../../../lib/product-files";
@@ -54,13 +54,18 @@ export async function POST(request: Request) {
       return Response.json({ error: "주문 금액이 일치하지 않아 결제를 중단했습니다." }, { status: 400 });
     if (order.status === "test_paid" && order.paymentKey === input.paymentKey) {
       await ensureTestProductFile(request, order.productSlug);
-      const grant = await createDownloadGrant(order.id, order.productSlug);
-      const emailSent = await sendReceiptIfNeeded(request, order.id, grant.token);
+      const grant = await getOrCreatePurchaseDownloadGrant(order.id, order.productSlug);
+      const emailSent = grant
+        ? await sendReceiptIfNeeded(request, order.id, grant.token)
+        : Boolean(order.receiptEmailSentAt);
       return Response.json({
         orderId: order.id,
         status: order.status,
         approvedAt: order.approvedAt,
-        downloadUrl: downloadUrl(request, grant.token),
+        // Payment query parameters are not a long-lived download credential.
+        // A retry preserves or resends the email link without disclosing it again.
+        downloadUrl: null,
+        reissueRequired: !grant || !emailSent,
         emailSent,
       });
     }
@@ -89,7 +94,8 @@ export async function POST(request: Request) {
       data: { status: "test_paid", paymentKey: input.paymentKey, approvedAt },
     });
     await ensureTestProductFile(request, order.productSlug);
-    const grant = await createDownloadGrant(order.id, order.productSlug);
+    const grant = await getOrCreatePurchaseDownloadGrant(order.id, order.productSlug);
+    if (!grant) throw new Error("구매 다운로드 주소를 만들지 못했습니다.");
     const emailSent = await sendReceiptIfNeeded(request, order.id, grant.token);
     return Response.json({
       orderId: order.id,

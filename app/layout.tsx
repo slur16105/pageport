@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import Script from "next/script";
+import { PrivacyAnalytics } from "../components/PrivacyAnalytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -24,20 +23,18 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ko">
       <body>
+        <Script id="pageport-payment-query-scrub" strategy="beforeInteractive">
+          {`if(location.pathname==='/payment/success'&&location.search){history.replaceState(history.state,'',location.pathname+location.hash)}`}
+        </Script>
         {children}
-        {analyticsEnabled && (
-          <>
-            <Analytics />
-            <SpeedInsights />
-          </>
-        )}
+        {analyticsEnabled && <PrivacyAnalytics />}
         {gaId && (
           <>
             <Script src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`} strategy="afterInteractive" />
             <Script
               id="pageport-ga4"
               strategy="afterInteractive"
-            >{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaId}',{anonymize_ip:true});`}</Script>
+            >{`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','${gaId}',{anonymize_ip:true,page_location:location.origin+location.pathname});`}</Script>
           </>
         )}
       </body>
