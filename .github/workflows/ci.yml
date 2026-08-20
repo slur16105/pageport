@@ -31,7 +31,7 @@ jobs:
       CRON_SECRET: ci_cron_secret_1234567890123456789012
     # 설치 → 코드 생성 → 타입·형식·기능·브라우저 검사 순서로 진행합니다.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
         with:
           version: 11.9.0
