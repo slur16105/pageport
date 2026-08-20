@@ -2600,16 +2600,86 @@ footer small {
   }
 }
 
-/* PAGEPORT의 운영 원칙과 구매자·관리자 흐름을 소개하는 서비스 안내 페이지입니다. */
+/* 구매자가 아닌 검토자가 PAGEPORT의 전체 구조를 확인하는 전용 안내 페이지입니다. */
+.review-header {
+  min-height: 84px;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 28px;
+  align-items: center;
+  padding: 16px 4vw;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.24);
+  background: #1b3042;
+  color: #fffdf7;
+}
+.review-header-title {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.review-header-title > b {
+  padding: 7px 9px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+}
+.review-header > p {
+  margin: 0;
+  color: #dce6df;
+  font-size: 13px;
+}
+.review-header > p strong {
+  margin-right: 7px;
+  color: #f2cf58;
+}
+.review-header nav {
+  gap: 20px;
+  font-size: 12px;
+}
+.review-header nav a {
+  padding-bottom: 3px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.58);
+}
+.review-context {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.75fr) minmax(360px, 1.55fr) auto;
+  gap: 30px;
+  align-items: center;
+  padding: 20px 4vw;
+  border-bottom: 1px solid var(--ink);
+  background: #f2cf58;
+}
+.review-context strong {
+  font-size: 15px;
+}
+.review-context p {
+  margin: 0;
+  color: #3f4b44;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.review-context span {
+  padding: 7px 10px;
+  border: 1px solid rgba(23, 35, 29, 0.42);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
 .about-page {
   min-height: 100vh;
-  background: var(--cream);
+  background: #edf0e9;
 }
 .about-hero {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
   min-height: 640px;
   border-bottom: 1px solid var(--ink);
+  background-color: #edf0e9;
+  background-image:
+    linear-gradient(rgba(27, 48, 66, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(27, 48, 66, 0.055) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 .about-hero-copy {
   display: flex;
@@ -2861,7 +2931,56 @@ footer small {
   color: var(--orange);
   font-weight: 900;
 }
+.review-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 30px;
+  align-items: center;
+  padding: 34px 4vw;
+  border-top: 1px solid rgba(255, 255, 255, 0.28);
+  background: #1b3042;
+  color: #fffdf7;
+}
+.review-footer > div {
+  display: block;
+}
+.review-footer strong {
+  font-size: 12px;
+  letter-spacing: 0.13em;
+}
+.review-footer p {
+  margin: 9px 0 0;
+  color: #bcc9c2;
+  text-align: left;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.review-footer > a {
+  flex: none;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  font-weight: 800;
+}
 @media (max-width: 900px) {
+  .review-header {
+    grid-template-columns: 1fr auto;
+  }
+  .review-header > p {
+    grid-column: 1/-1;
+    grid-row: 2;
+  }
+  .review-header nav {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .review-context {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .review-context span {
+    justify-self: start;
+  }
   .about-hero,
   .about-data,
   .about-status {
@@ -2880,6 +2999,26 @@ footer small {
   }
 }
 @media (max-width: 660px) {
+  .review-header {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 18px 22px;
+  }
+  .review-header-title {
+    justify-content: space-between;
+  }
+  .review-header > p,
+  .review-header nav {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .review-header nav {
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .review-context {
+    padding: 20px 22px;
+  }
   .about-hero-copy,
   .about-principle-card,
   .about-entrances,
@@ -2912,6 +3051,11 @@ footer small {
   }
   .about-data-grid p {
     grid-column: 2;
+  }
+  .review-footer {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 34px 22px;
   }
 }
 .order-summary {
