@@ -2080,6 +2080,28 @@ footer small {
   opacity: 0.55;
   cursor: not-allowed;
 }
+.admin-action-alert {
+  margin-top: 16px;
+  padding: 16px 18px;
+  border: 1px solid #b54832;
+  background: #fff3ee;
+  color: #6d2d20;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.admin-action-alert strong {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 14px;
+}
+.admin-action-alert p {
+  margin: 4px 0 0;
+}
+.admin-action-alert b {
+  display: inline-block;
+  margin-right: 4px;
+  color: #9b3826;
+}
 .admin-products {
   align-self: start;
 }

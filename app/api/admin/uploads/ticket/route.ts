@@ -19,15 +19,26 @@ export async function POST(request: Request) {
     if (!(await isAdminRequest(request)))
       return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
     const input = schema.parse(await request.json());
+    const config = env();
+    const authorization = config.SUPABASE_TUS_ANON_KEY;
+    // 새 publishable 키는 JWT가 아니므로 TUS의 Bearer 인증값으로 사용할 수 없습니다.
+    if (!authorization || authorization.split(".").length !== 3) {
+      return Response.json(
+        {
+          code: "TUS_UPLOAD_AUTH_INVALID",
+          error: "PDF 저장소 인증 설정을 확인해 주세요.",
+        },
+        { status: 503 },
+      );
+    }
     // 임의의 임시 저장 위치와 짧은 만료 시간을 사용해 허가받지 않은 업로드를 막습니다.
     const objectKey = `incoming/${crypto.randomUUID()}.pdf`;
     await prisma.uploadTicket.create({ data: { objectKey, expiresAt: new Date(Date.now() + 30 * 60_000) } });
-    const config = env();
     return Response.json({
-      endpoint: `${config.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/upload/resumable`,
+      endpoint: `${config.NEXT_PUBLIC_SUPABASE_URL.replace(".supabase.co", ".storage.supabase.co")}/storage/v1/upload/resumable`,
       bucketName: "product-pdfs",
       objectKey,
-      authorization: config.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+      authorization,
       fileName: input.fileName,
       expiresInSeconds: 1800,
     });
