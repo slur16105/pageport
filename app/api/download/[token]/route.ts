@@ -1,3 +1,4 @@
+// 이 파일은 다운로드 주소가 유효한지 확인한 뒤 구매자를 실제 PDF 파일로 안전하게 연결합니다.
 import { Prisma } from "@prisma/client";
 import { hashDownloadToken } from "../../../../lib/download-links";
 import { prisma } from "../../../../lib/prisma";
@@ -20,6 +21,7 @@ function downloadError(request: Request, reason: string, message: string, status
 
 export async function GET(request: Request, { params }: Props) {
   try {
+    // 환불·만료·횟수 초과 여부를 먼저 확인해 권한이 없는 다운로드를 막습니다.
     const token = decodeURIComponent((await params).token);
     const tokenHash = hashDownloadToken(token);
     const candidate = await prisma.downloadGrant.findUnique({
@@ -39,8 +41,7 @@ export async function GET(request: Request, { params }: Props) {
     if (candidate.downloadCount >= candidate.maxDownloads) throw new Error("DOWNLOAD_LIMIT");
     if (!["paid", "test_paid"].includes(candidate.order.status)) throw new Error("ORDER_UNAVAILABLE");
 
-    // Confirm that Storage can issue the file URL before the atomic RPC records a
-    // download. A missing file or Storage outage must not consume the buyer's limit.
+    // 파일을 실제로 받을 수 있는지 먼저 확인해 저장소 장애가 다운로드 횟수를 소모하지 않게 합니다.
     const { data, error } = await supabaseAdmin()
       .storage.from(PRIVATE_PDF_BUCKET)
       .createSignedUrl(candidate.objectKey, 60, {
@@ -48,6 +49,7 @@ export async function GET(request: Request, { params }: Props) {
       });
     if (error || !data?.signedUrl) return downloadError(request, "missing", "PDF 파일을 찾을 수 없습니다.", 404);
 
+    // 데이터베이스가 권한 확인과 횟수 증가를 한 번에 처리해 동시 요청의 우회를 막습니다.
     const result = await prisma.$queryRaw<
       Array<{ object_key: string; order_id: string; download_count: number }>
     >(Prisma.sql`

@@ -1,3 +1,4 @@
+# GitHub PR 또는 main 변경 때마다 코드가 안전하게 빌드되는지 자동으로 확인하는 검사표입니다.
 name: PAGEPORT checks
 
 on:
@@ -11,6 +12,7 @@ permissions:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    # 외부 서비스에 실제로 접속하지 않고도 빌드할 수 있도록 형식만 맞춘 시험값을 사용합니다.
     env:
       DATABASE_URL: postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder
       DIRECT_URL: postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder
@@ -27,6 +29,7 @@ jobs:
       TOSS_TEST_SECRET_KEY: test_gsk_ci_placeholder
       TOSS_WEBHOOK_SECRET: ci_webhook_secret_1234567890123456789
       CRON_SECRET: ci_cron_secret_1234567890123456789012
+    # 설치 → 코드 생성 → 타입·형식·기능·브라우저 검사 순서로 진행합니다.
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

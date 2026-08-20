@@ -1,3 +1,4 @@
+// 여러 페이지 아래에 반복해서 쓰는 공통 푸터로, 정책과 재다운로드 메뉴를 한곳에 제공합니다.
 import Link from "next/link";
 
 export function SiteFooter() {

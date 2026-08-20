@@ -1,3 +1,4 @@
+// 여러 종류의 안내 메일이 같은 PAGEPORT 디자인을 공유하도록 만든 이메일 전용 화면 틀입니다.
 import { Body, Button, Container, Head, Heading, Html, Preview, Section, Text } from "@react-email/components";
 import { render } from "@react-email/render";
 
@@ -12,6 +13,7 @@ type EmailView = {
 };
 
 function PageportEmail({ view }: { view: EmailView }) {
+  // 전달받은 제목·상세정보·버튼을 이메일 앱에서 읽을 수 있는 HTML 구조로 조립합니다.
   return (
     <Html lang="ko">
       <Head />
@@ -46,9 +48,11 @@ function PageportEmail({ view }: { view: EmailView }) {
 }
 
 export function renderPageportEmail(view: EmailView) {
+  // React로 작성한 이메일 화면을 Resend가 보낼 수 있는 HTML 문자열로 바꿉니다.
   return render(<PageportEmail view={view} />);
 }
 
+// 아래 값들은 웹사이트와 비슷한 색과 간격을 이메일에서도 유지하기 위한 디자인 설정입니다.
 const body = {
   margin: "0",
   background: "#f6f1e7",

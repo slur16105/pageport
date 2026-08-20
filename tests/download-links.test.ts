@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// 실제 데이터베이스에 손대지 않고 다운로드 주소 생성 규칙만 시험하기 위한 가짜 저장소입니다.
 const mocks = vi.hoisted(() => ({
   findUnique: vi.fn(),
   findFirst: vi.fn(),
@@ -19,6 +20,7 @@ vi.mock("../lib/prisma", () => ({
 
 import { getOrCreatePurchaseDownloadGrant } from "../lib/download-links";
 
+// 결제 완료 요청이 중복으로 도착해도 다운로드 주소가 여러 개 생기지 않는지 확인합니다.
 describe("구매 다운로드 주소 멱등성", () => {
   beforeEach(() => {
     vi.clearAllMocks();

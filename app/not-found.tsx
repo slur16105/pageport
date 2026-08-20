@@ -1,3 +1,4 @@
+// 존재하지 않는 주소로 들어왔을 때 길을 잃지 않도록 상품 목록으로 안내하는 404 화면입니다.
 export default function NotFound() {
   return (
     <main className="status-page">

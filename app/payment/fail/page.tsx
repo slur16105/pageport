@@ -1,3 +1,4 @@
+// 사용자가 결제를 취소했거나 결제사에서 실패한 경우 이유와 다시 돌아갈 길을 보여주는 페이지입니다.
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "시험 결제 실패 | PAGEPORT", robots: { index: false, follow: false } };
@@ -5,6 +6,7 @@ export const metadata: Metadata = { title: "시험 결제 실패 | PAGEPORT", ro
 type Props = { searchParams: Promise<{ code?: string; message?: string; orderId?: string }> };
 
 export default async function PaymentFailPage({ searchParams }: Props) {
+  // 직접 취소한 경우와 오류로 실패한 경우를 나누어 불안하지 않도록 다른 문구를 보여줍니다.
   const params = await searchParams;
   const canceled = params.code === "PAY_PROCESS_CANCELED";
   return (

@@ -1,3 +1,4 @@
+// 주문번호를 외울 필요 없이 구매 이메일 인증으로 PDF 다운로드 주소를 다시 받게 하는 페이지입니다.
 import type { Metadata } from "next";
 import { SiteFooter } from "../../../components/SiteFooter";
 import { SiteHeader } from "../../../components/SiteHeader";

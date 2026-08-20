@@ -1,3 +1,4 @@
+// 개발·시험 중 화면에 보여줄 샘플 상품의 이름, 가격, 설명과 디자인 정보를 한곳에 모아둔 목록입니다.
 export type Product = {
   slug: string;
   category: string;

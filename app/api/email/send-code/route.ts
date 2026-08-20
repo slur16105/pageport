@@ -1,3 +1,4 @@
+// 이 파일은 결제·재다운로드·관리자 로그인에 사용할 6자리 인증번호를 이메일로 보냅니다.
 import { z } from "zod";
 import { verificationCodeEmail } from "../../../../emails/verification-code";
 import { getAdminEmail } from "../../../../lib/admin-auth";
@@ -21,6 +22,7 @@ export async function POST(request: Request) {
     if (input.purpose === "admin" && email !== getAdminEmail()) {
       return Response.json({ error: "관리자 이메일을 확인해 주세요." }, { status: 403 });
     }
+    // 자동화 프로그램의 대량 발송 요청인지 확인해 이메일 서비스 악용을 막습니다.
     if (!(await verifyTurnstile(input.turnstileToken, request))) {
       return Response.json({ error: "자동 요청 확인에 실패했습니다. 다시 시도해 주세요." }, { status: 403 });
     }
@@ -30,6 +32,7 @@ export async function POST(request: Request) {
       return Response.json({ error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." }, { status: 429 });
     }
 
+    // 같은 사람이 연속으로 메일을 보내지 못하게 최소 1분 간격을 둡니다.
     const existing = await prisma.emailVerification.findUnique({
       where: { email_purpose: { email, purpose: input.purpose } },
     });
@@ -39,6 +42,7 @@ export async function POST(request: Request) {
       return Response.json({ error: `${retryAfter}초 후에 다시 요청해 주세요.`, retryAfter }, { status: 429 });
     }
 
+    // 예측하기 어려운 임의의 인증번호를 만들고 원문은 저장하지 않은 채 이메일로만 전달합니다.
     const code = crypto.getRandomValues(new Uint32Array(1))[0].toString().padStart(10, "0").slice(-6);
     const template = await verificationCodeEmail(code, input.purpose);
     const config = env();

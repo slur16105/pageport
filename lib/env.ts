@@ -1,3 +1,4 @@
+// 이 파일은 서비스 실행에 필요한 비밀키와 설정값이 빠졌거나 잘못되지 않았는지 검사합니다.
 import "server-only";
 
 import { z } from "zod";
@@ -28,6 +29,7 @@ const serverSchema = z.object({
 let cached: z.infer<typeof serverSchema> | undefined;
 
 export function env() {
+  // 서버 설정은 한 번만 검사하고 보관해 모든 기능이 같은 안전한 값을 사용하게 합니다.
   cached ??= serverSchema.parse(process.env);
   return cached;
 }

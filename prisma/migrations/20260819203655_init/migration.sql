@@ -1,4 +1,7 @@
--- CreateTable
+-- PAGEPORT의 첫 데이터베이스 구조를 만드는 변경 기록입니다.
+-- 상품, 주문, 이메일 인증, 다운로드, 결제 알림, 예약 작업, 요청 제한 정보를 차례로 만듭니다.
+
+-- 판매할 PDF 상품 정보표입니다.
 CREATE TABLE "products" (
     "id" UUID NOT NULL,
     "slug" TEXT NOT NULL,
@@ -22,7 +25,7 @@ CREATE TABLE "products" (
     CONSTRAINT "products_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
+-- 고객의 결제·환불·다운로드 현황을 묶어 보관하는 주문 정보표입니다.
 CREATE TABLE "orders" (
     "id" TEXT NOT NULL,
     "product_id" UUID NOT NULL,
@@ -50,7 +53,7 @@ CREATE TABLE "orders" (
     CONSTRAINT "orders_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
+-- 이메일로 보낸 인증번호의 안전한 변환값과 만료 시각을 보관합니다.
 CREATE TABLE "email_verifications" (
     "id" UUID NOT NULL,
     "email" TEXT NOT NULL,
@@ -67,7 +70,7 @@ CREATE TABLE "email_verifications" (
     CONSTRAINT "email_verifications_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
+-- 결제한 고객에게 발급한 다운로드 권한과 남은 횟수를 보관합니다.
 CREATE TABLE "download_grants" (
     "id" UUID NOT NULL,
     "order_id" TEXT NOT NULL,
@@ -83,7 +86,7 @@ CREATE TABLE "download_grants" (
     CONSTRAINT "download_grants_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
+-- 실제 다운로드가 일어난 시점과 접속 정보를 고객지원용으로 기록합니다.
 CREATE TABLE "download_events" (
     "id" UUID NOT NULL,
     "order_id" TEXT NOT NULL,
@@ -95,7 +98,7 @@ CREATE TABLE "download_events" (
     CONSTRAINT "download_events_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
+-- 토스페이먼츠가 보낸 상태 알림을 중복 없이 처리하기 위한 장부입니다.
 CREATE TABLE "webhook_events" (
     "id" TEXT NOT NULL,
     "event_type" TEXT NOT NULL,
@@ -109,7 +112,7 @@ CREATE TABLE "webhook_events" (
     CONSTRAINT "webhook_events_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
+-- 나중에 다시 실행해야 하는 자동 작업과 그 결과를 기록합니다.
 CREATE TABLE "job_ledger" (
     "id" UUID NOT NULL,
     "job_key" TEXT NOT NULL,
@@ -127,7 +130,7 @@ CREATE TABLE "job_ledger" (
     CONSTRAINT "job_ledger_pkey" PRIMARY KEY ("id")
 );
 
--- CreateTable
+-- 같은 요청이 짧은 시간에 너무 많이 들어오는 것을 막기 위한 횟수표입니다.
 CREATE TABLE "request_limits" (
     "key" TEXT NOT NULL,
     "count" INTEGER NOT NULL DEFAULT 0,
@@ -137,7 +140,7 @@ CREATE TABLE "request_limits" (
     CONSTRAINT "request_limits_pkey" PRIMARY KEY ("key")
 );
 
--- CreateIndex
+-- 아래 색인은 책의 찾아보기처럼 자주 찾는 주문·상품을 빠르게 조회하게 해줍니다.
 CREATE UNIQUE INDEX "products_slug_key" ON "products"("slug");
 
 -- CreateIndex
@@ -182,7 +185,7 @@ CREATE INDEX "job_ledger_status_next_run_at_idx" ON "job_ledger"("status", "next
 -- CreateIndex
 CREATE INDEX "request_limits_expires_at_idx" ON "request_limits"("expires_at");
 
--- AddForeignKey
+-- 아래 연결 규칙은 주문·다운로드 기록이 어떤 상품과 주문에 속하는지 보장합니다.
 ALTER TABLE "orders" ADD CONSTRAINT "orders_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "products"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey

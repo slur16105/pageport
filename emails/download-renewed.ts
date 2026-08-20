@@ -1,5 +1,7 @@
+// 구매자가 만료된 다운로드 주소를 다시 발급받았을 때 보내는 이메일 내용을 만듭니다.
 import { renderPageportEmail } from "./render";
 
+// 상품명처럼 외부에서 들어온 글자가 이메일 화면의 코드로 오해되지 않도록 안전하게 바꿉니다.
 function escapeHtml(value: string) {
   return value.replace(
     /[&<>'"]/g,
@@ -15,6 +17,7 @@ function escapeHtml(value: string) {
 }
 
 export async function downloadRenewedEmail(input: { productTitle: string; orderId: string; downloadUrl: string }) {
+  // 일반 텍스트 메일과 디자인이 적용된 HTML 메일을 함께 준비해 어떤 메일 앱에서도 읽을 수 있게 합니다.
   const title = escapeHtml(input.productTitle);
   const orderId = escapeHtml(input.orderId);
   const url = escapeHtml(input.downloadUrl);

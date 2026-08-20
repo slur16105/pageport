@@ -1,5 +1,7 @@
 "use client";
 
+// 예상하지 못한 화면 오류가 생겼을 때 사용자가 다시 시도하거나 홈으로 돌아갈 수 있게 하는 공통 오류 화면입니다.
+
 export default function ErrorPage({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <main className="status-page">

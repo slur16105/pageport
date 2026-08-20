@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/*
+ * PAGEPORT 전체 화면의 디자인 규칙을 한곳에 모은 파일입니다.
+ * 위에서부터 공통 색상과 메뉴, 메인 화면, 상품·결제 화면, 관리자 화면 순서로 구성되어 있습니다.
+ * 화면 크기가 작아질 때 적용되는 @media 구간은 휴대전화용 배치를 뜻합니다.
+ */
+
+/* 서비스 전체에서 반복해 사용하는 색상입니다. 이름을 바꾸면 여러 화면의 색이 함께 바뀝니다. */
 :root {
   --ink: #17231d;
   --cream: #f6f1e7;
@@ -56,6 +63,7 @@ nav {
   font-weight: 700;
   cursor: pointer;
 }
+/* 메인 화면의 첫인상을 만드는 소개 문구와 PDF 종이 그림 영역입니다. */
 .hero {
   min-height: 650px;
   display: grid;
@@ -837,6 +845,7 @@ footer small {
   .header-button {
     padding: 9px 13px;
   }
+  /* 방문자가 카테고리를 누르면 선택한 분야의 상품만 보이도록 하는 버튼 줄입니다. */
   .category-bar {
     padding-left: 22px;
     padding-right: 22px;
@@ -875,6 +884,7 @@ footer small {
   }
 }
 
+/* 오류·완료처럼 한 가지 결과를 알려주는 공통 안내 화면입니다. */
 .status-page {
   min-height: 100vh;
   display: grid;
@@ -910,6 +920,7 @@ footer small {
   border: 0;
   cursor: pointer;
 }
+/* 이용약관·개인정보·환불 정책처럼 긴 글을 읽는 페이지입니다. */
 .policy-page {
   width: min(820px, calc(100% - 44px));
   margin: 0 auto;
@@ -953,6 +964,7 @@ footer small {
   font-size: 22px;
   font-weight: 800;
 }
+/* 상품 상세 화면: 미리보기, 설명, 가격, 이메일 확인과 구매 버튼을 배치합니다. */
 .detail-header {
   background: #fffaf0;
 }
@@ -1330,6 +1342,7 @@ footer small {
   }
 }
 
+/* 주문 확인과 토스 시험 결제로 넘어가기 전 정보를 확인하는 화면입니다. */
 .checkout-page {
   min-height: 100vh;
   background: #e8dfd1;
@@ -1532,6 +1545,7 @@ footer small {
   font-size: 11px;
   cursor: pointer;
 }
+/* 결제 성공 또는 실패 결과를 같은 디자인으로 보여주는 화면입니다. */
 .payment-result-page {
   min-height: 100vh;
   display: grid;
@@ -1647,6 +1661,7 @@ footer small {
   }
 }
 
+/* 구매 이메일을 다시 확인하고 만료된 다운로드 주소를 새로 받는 화면입니다. */
 .reissue-page {
   min-height: 100vh;
   background: #e8dfd1;
@@ -1819,6 +1834,7 @@ footer small {
   }
 }
 
+/* 운영자가 상품·주문·환불을 관리하는 관리자 전용 화면입니다. */
 .admin-page {
   min-height: 100vh;
   background: #e8dfd1;
@@ -2223,6 +2239,7 @@ footer small {
 }
 
 /* Branded download notices */
+/* 환불·만료·횟수 초과 등으로 파일을 받을 수 없을 때 이유와 다음 행동을 안내합니다. */
 .download-unavailable-page {
   min-height: 100vh;
   display: flex;

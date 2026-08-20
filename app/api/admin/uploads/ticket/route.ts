@@ -1,3 +1,4 @@
+// 이 파일은 관리자가 큰 PDF를 중단 후 재개 방식으로 올릴 수 있는 30분짜리 업로드 권한을 만듭니다.
 import { z } from "zod";
 import { isAdminRequest } from "../../../../../lib/admin-auth";
 import { env } from "../../../../../lib/env";
@@ -18,6 +19,7 @@ export async function POST(request: Request) {
     if (!(await isAdminRequest(request)))
       return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
     const input = schema.parse(await request.json());
+    // 임의의 임시 저장 위치와 짧은 만료 시간을 사용해 허가받지 않은 업로드를 막습니다.
     const objectKey = `incoming/${crypto.randomUUID()}.pdf`;
     await prisma.uploadTicket.create({ data: { objectKey, expiresAt: new Date(Date.now() + 30 * 60_000) } });
     const config = env();

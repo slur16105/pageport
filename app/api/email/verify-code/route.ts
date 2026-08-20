@@ -1,3 +1,4 @@
+// 이 파일은 사용자가 입력한 6자리 이메일 인증번호가 맞는지 확인합니다.
 import { z } from "zod";
 import { hashVerificationValue } from "../../../../lib/email-verification";
 import { prisma } from "../../../../lib/prisma";
@@ -11,6 +12,7 @@ export async function POST(request: Request) {
   try {
     const input = inputSchema.parse(await request.json());
     const email = input.email.trim().toLowerCase();
+    // 인증번호를 무작위로 계속 대입하는 공격을 막기 위해 요청 횟수를 제한합니다.
     if (!(await allowRequest(`verify-code:${privacyHash(requestIp(request))}`, 30, 3600))) {
       return Response.json({ error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." }, { status: 429 });
     }
@@ -34,6 +36,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // 인증에 성공하면 비밀번호 대신 다음 한 번의 중요 작업에 쓸 임시 증명서를 발급합니다.
     const verificationToken = crypto.randomUUID();
     await prisma.emailVerification.update({
       where: { id: record.id },

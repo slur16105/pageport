@@ -1,3 +1,4 @@
+// PAGEPORT 첫 화면으로, 서비스 소개부터 상품 탐색·구매 방법·판매자 안내·FAQ까지 한 흐름으로 보여줍니다.
 import { listPublishedProducts } from "../lib/catalog-products";
 import { ProductCatalog } from "../components/ProductCatalog";
 import { HeroSection } from "../components/HeroSection";
@@ -7,9 +8,11 @@ import { SiteHeader } from "../components/SiteHeader";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  // 데이터베이스에서 현재 판매 중인 상품만 가져와 카테고리 필터가 있는 상품 목록에 전달합니다.
   const products = await listPublishedProducts();
   return (
     <main>
+      {/* 상단 소개와 상품 목록 다음에 구매 순서를 처음 방문한 사용자 눈높이로 설명합니다. */}
       <SiteHeader />
 
       <HeroSection />
@@ -50,6 +53,7 @@ export default async function Home() {
       </section>
 
       <section className="seller-section" id="sell">
+        {/* 판매자 입점은 아직 시작 전임을 분명히 밝히고, 2차 출시 예정 정책만 미리 안내합니다. */}
         <div className="seller-copy">
           <p className="eyebrow">2차 출시에서 준비합니다</p>
           <h2>
@@ -85,6 +89,7 @@ export default async function Home() {
       </section>
 
       <section className="faq-section" id="faq">
+        {/* 결제 전에 자주 생기는 걱정을 펼쳐보는 질문과 답변으로 정리합니다. */}
         <p className="eyebrow">자주 묻는 질문</p>
         <h2>구매 전에 확인해 주세요</h2>
         <div className="faq-list">

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+// 이 파일은 실제 브라우저를 움직여 고객의 주요 이용 흐름이 처음부터 끝까지 연결되는지 확인합니다.
 test("홈에서 상품 상세와 구매 화면으로 이동한다", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: /전문 지식이/ })).toBeVisible();
@@ -16,6 +17,7 @@ test("홈에서 상품 상세와 구매 화면으로 이동한다", async ({ pag
 });
 
 test("구매 파일 다시 받기와 관리자 로그인 화면이 열린다", async ({ page }) => {
+  // 로그인이 없는 구매자용 재발급 화면과 운영자 전용 입구를 차례로 확인합니다.
   await page.goto("/downloads/reissue");
   await expect(page).toHaveURL(/\/downloads\/reissue/);
   await expect(page.getByRole("heading", { name: /다시/ })).toBeVisible();
@@ -25,6 +27,7 @@ test("구매 파일 다시 받기와 관리자 로그인 화면이 열린다", a
 });
 
 test("상품 카테고리 필터와 정책 페이지의 공통 메뉴가 동작한다", async ({ page }) => {
+  // 필터 기능과 헤더·푸터가 정책 페이지에서도 끊기지 않는지 확인합니다.
   await page.goto("/");
   await page.getByRole("button", { name: "업무·생산성" }).click();
   await expect(page.getByRole("button", { name: "업무·생산성" })).toHaveAttribute("aria-pressed", "true");
@@ -38,6 +41,7 @@ test("상품 카테고리 필터와 정책 페이지의 공통 메뉴가 동작�
 });
 
 test("히어로 문서가 등장하고 마우스에 가볍게 반응한다", async ({ page }) => {
+  // 첫 화면 장식이 보이며, 마우스 위치에 따라 움직임 값이 바뀌는지 확인합니다.
   await page.goto("/");
   const art = page.locator(".hero-art");
   await expect(art).toBeVisible();

@@ -1,3 +1,4 @@
+// 선택한 상품과 결제 예정 금액을 다시 보여주고 이메일 인증·시험 결제를 시작하는 주문 확인 페이지입니다.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublishedProduct } from "../../../lib/catalog-products";
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 type CheckoutPageProps = { params: Promise<{ slug: string }> };
 
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
+  // 공개 판매 중인 상품만 결제할 수 있으며 없는 상품 주소는 404 화면으로 보냅니다.
   const { slug } = await params;
   const product = await getPublishedProduct(slug);
   if (!product) notFound();
@@ -28,6 +30,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
         </a>
       </header>
       <section className="checkout-shell">
+        {/* 왼쪽은 현재 단계를 설명하고, 오른쪽은 상품 요약과 실제 입력 절차를 보여줍니다. */}
         <div className="checkout-copy">
           <p className="eyebrow">마지막 확인 단계</p>
           <h1>

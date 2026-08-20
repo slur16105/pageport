@@ -1,3 +1,4 @@
+// 다운로드 주소가 만료·횟수 초과·환불 등으로 열리지 않을 때 이유와 다음 행동을 알려주는 페이지입니다.
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -7,6 +8,7 @@ type Reason = "expired" | "limit" | "refunded" | "missing" | "unavailable";
 type Props = { searchParams: Promise<{ reason?: string }> };
 
 const messages: Record<Reason, { label: string; title: string; description: string; action: string; href: string }> = {
+  // 기술적인 오류 문구 대신 사용자가 이해할 수 있는 상황별 안내와 이동 버튼을 준비합니다.
   expired: {
     label: "LINK EXPIRED",
     title: "다운로드 시간이 지났어요.",
@@ -47,6 +49,7 @@ const messages: Record<Reason, { label: string; title: string; description: stri
 };
 
 export default async function DownloadUnavailablePage({ searchParams }: Props) {
+  // 주소에 적힌 이유가 목록에 없으면 가장 일반적인 다운로드 안내를 사용합니다.
   const params = await searchParams;
   const reason = (params.reason && params.reason in messages ? params.reason : "unavailable") as Reason;
   const message = messages[reason];

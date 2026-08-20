@@ -1,6 +1,8 @@
+// 구매, 다운로드 재발급, 관리자 로그인에 사용하는 6자리 인증번호 이메일을 만듭니다.
 import { renderPageportEmail } from "./render";
 
 export async function verificationCodeEmail(code: string, purpose: "checkout" | "redownload" | "admin" = "checkout") {
+  // 같은 인증번호라도 사용 목적에 맞는 제목을 보여줘 사용자가 어떤 요청인지 구분할 수 있게 합니다.
   const isRedownload = purpose === "redownload";
   const isAdmin = purpose === "admin";
   const heading = isAdmin

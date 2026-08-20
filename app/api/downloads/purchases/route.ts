@@ -1,3 +1,4 @@
+// 이 파일은 이메일 인증을 마친 구매자에게 자신의 결제 완료 상품 목록을 찾아 줍니다.
 import { z } from "zod";
 import { verifyEmailToken } from "../../../../lib/email-verification";
 import { prisma } from "../../../../lib/prisma";
@@ -8,6 +9,7 @@ export async function POST(request: Request) {
   try {
     const input = schema.parse(await request.json());
     const email = input.email.trim().toLowerCase();
+    // 로그인 기능이 없으므로 이메일 인증을 구매 내역을 볼 수 있는 임시 열쇠로 사용합니다.
     if (!(await verifyEmailToken(email, input.emailVerificationToken)))
       return Response.json({ error: "이메일 인증이 만료되었습니다. 새 인증번호를 받아 주세요." }, { status: 403 });
     const purchases = await prisma.order.findMany({

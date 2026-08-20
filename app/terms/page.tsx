@@ -1,3 +1,4 @@
+// PAGEPORT 이용 범위와 구매한 파일을 사용할 때 지켜야 할 기본 약속을 설명하는 페이지입니다.
 import type { Metadata } from "next";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";

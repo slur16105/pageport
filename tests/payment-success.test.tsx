@@ -2,6 +2,7 @@ import { render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { PaymentSuccess } from "../app/payment/success/PaymentSuccess";
 
+// 결제 완료 주소에 붙는 결제 식별 정보가 브라우저 주소창에 오래 남지 않는지 확인합니다.
 describe("결제 성공 주소 보호", () => {
   afterEach(() => vi.unstubAllGlobals());
 

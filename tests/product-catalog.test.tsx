@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { products } from "../app/data/products";
 import { ProductCatalog } from "../components/ProductCatalog";
 
+// 고객이 카테고리 버튼을 눌렀을 때 알맞은 상품만 남는지 사용자 관점에서 시험합니다.
 describe("상품 카테고리 필터", () => {
   it("선택한 카테고리의 상품만 보여주고 전체 목록으로 돌아간다", async () => {
     render(<ProductCatalog products={products} />);

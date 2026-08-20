@@ -1,3 +1,4 @@
+// 이 파일은 구매자 본인 확인 후 만료되거나 잃어버린 PDF 다운로드 주소를 새로 발급합니다.
 import { z } from "zod";
 import { createDownloadGrant, downloadUrl } from "../../../../lib/download-links";
 import { sendDownloadRenewalEmail } from "../../../../lib/download-renewal-email";
@@ -14,12 +15,14 @@ export async function POST(request: Request) {
       where: { id: input.orderId.trim(), buyerEmail: email, status: { in: ["paid", "test_paid"] } },
     });
     if (!order) return Response.json({ error: "해당 이메일의 결제 완료 주문을 찾을 수 없습니다." }, { status: 404 });
+    // 주문번호만 아는 다른 사람이 재발급하지 못하도록 이메일 인증을 한 번 사용하고 폐기합니다.
     if (!(await consumeEmailToken(email, input.emailVerificationToken)))
       return Response.json(
         { error: "이메일 인증이 만료되었거나 이미 사용되었습니다. 새 인증번호를 받아 주세요." },
         { status: 403 },
       );
 
+    // 새 주소를 만들면 이전 주소는 자동으로 폐기되어 유출된 링크를 계속 쓸 수 없습니다.
     const grant = await createDownloadGrant(order.id, order.productSlug);
     const url = downloadUrl(request, grant.token);
     let emailSent = false;
@@ -33,6 +36,7 @@ export async function POST(request: Request) {
       });
       emailSent = true;
     } catch {
+      // 이메일 서비스가 잠시 실패해도 주소는 화면에 보여 주고, 메일은 작업 장부에서 재시도합니다.
       await prisma.jobLedger.upsert({
         where: { jobKey: `download-email:${order.id}:${grant.expiresAt.getTime()}` },
         create: {

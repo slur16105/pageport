@@ -1,10 +1,13 @@
 "use client";
 
+// 토스 결제에서 돌아온 뒤 서버에 최종 승인을 요청하고, 성공하면 PDF 다운로드 버튼을 보여주는 화면입니다.
+
 import { useEffect, useState } from "react";
 
 type PaymentParams = { paymentKey: string; orderId: string; amount: number };
 
 export function PaymentSuccess({ payment }: { payment: PaymentParams | null }) {
+  // 확인 중·완료·실패 중 현재 단계를 기억해 사용자에게 알맞은 안내를 보여줍니다.
   const [status, setStatus] = useState<"confirming" | "success" | "error">(payment ? "confirming" : "error");
   const [message, setMessage] = useState(
     payment ? "주문 금액을 확인하고 시험 결제를 승인하고 있습니다." : "결제 결과 정보가 올바르지 않습니다.",
@@ -16,6 +19,7 @@ export function PaymentSuccess({ payment }: { payment: PaymentParams | null }) {
     window.history.replaceState(window.history.state, "", window.location.pathname);
     let active = true;
     async function confirmPayment() {
+      // 브라우저가 받은 결제 정보를 서버가 다시 확인해야 실제로 완료된 주문으로 처리됩니다.
       try {
         const response = await fetch("/api/payments/confirm", {
           method: "POST",

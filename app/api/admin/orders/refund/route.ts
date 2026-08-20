@@ -1,3 +1,4 @@
+// 이 파일은 관리자가 주문을 확인하고 토스 결제를 환불하며 기존 다운로드 권한을 회수합니다.
 import { z } from "zod";
 import { isAdminRequest } from "../../../../../lib/admin-auth";
 import { env } from "../../../../../lib/env";
@@ -11,6 +12,7 @@ const schema = z.object({
 });
 
 async function sendRefundEmail(orderId: string) {
+  // 환불 메일 발송이 실패하면 작업 장부에 남겨 예약 작업이 나중에 다시 시도하게 합니다.
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order?.refundedAt || !order.refundReason) return false;
   if (order.refundEmailSentAt) return true;
@@ -46,6 +48,7 @@ async function sendRefundEmail(orderId: string) {
 
 export async function POST(request: Request) {
   try {
+    // 환불은 결제 취소와 파일 권한 회수가 따르므로 관리자만 실행할 수 있습니다.
     if (!(await isAdminRequest(request)))
       return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
     const input = schema.parse(await request.json());
@@ -62,6 +65,7 @@ export async function POST(request: Request) {
         { status: 409 },
       );
 
+    // PAGEPORT 장부만 바꾸지 않고 토스에 실제 취소를 요청한 뒤 성공 결과를 저장합니다.
     const tossResponse = await fetch(
       `https://api.tosspayments.com/v1/payments/${encodeURIComponent(order.paymentKey)}/cancel`,
       {
@@ -83,6 +87,7 @@ export async function POST(request: Request) {
     const refundedAt = tossResult.cancels?.at(-1)?.canceledAt
       ? new Date(tossResult.cancels.at(-1)!.canceledAt!)
       : new Date();
+    // 환불 상태 변경과 다운로드 주소 폐기를 함께 처리해 환불 후 파일 접근을 막습니다.
     await prisma.$transaction([
       prisma.order.update({
         where: { id: order.id },

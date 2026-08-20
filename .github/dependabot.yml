@@ -1,11 +1,14 @@
+# 매주 월요일에 오래된 패키지와 GitHub 작업 도구가 있는지 자동으로 확인합니다.
 version: 2
 updates:
+  # 웹사이트에서 사용하는 npm/pnpm 기술의 업데이트를 최대 5개까지 제안합니다.
   - package-ecosystem: npm
     directory: /
     schedule:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+  # 자동검사 자체에서 사용하는 GitHub Actions의 업데이트도 확인합니다.
   - package-ecosystem: github-actions
     directory: /
     schedule:

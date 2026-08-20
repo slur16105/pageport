@@ -1,3 +1,4 @@
+// 이 파일은 토스가 알려 주는 결제 완료·취소 소식을 검증하고 PAGEPORT 주문 장부에 반영합니다.
 import { z } from "zod";
 import { env } from "../../../../lib/env";
 import { prisma } from "../../../../lib/prisma";
@@ -18,6 +19,7 @@ const webhookSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    // 공개된 수신 주소이므로 지나치게 큰 본문과 반복 요청을 먼저 차단합니다.
     const contentLength = Number(request.headers.get("content-length") ?? "0");
     if (Number.isFinite(contentLength) && contentLength > 128 * 1024) {
       return Response.json({ error: "웹훅 본문이 너무 큽니다." }, { status: 413 });
@@ -34,9 +36,11 @@ export async function POST(request: Request) {
     const eventId =
       request.headers.get("tosspayments-webhook-transmission-id") ||
       `${input.eventType}:${input.data.paymentKey}:${input.createdAt ?? "unknown"}`;
+    // 토스가 같은 알림을 다시 보내도 이미 처리한 사건은 한 번만 반영합니다.
     const existing = await prisma.webhookEvent.findUnique({ where: { id: eventId } });
     if (existing?.processedAt) return Response.json({ received: true, duplicate: true });
 
+    // 전달받은 내용을 그대로 믿지 않고 토스 서버에 결제 상태를 다시 조회합니다.
     const secret = env().TOSS_TEST_SECRET_KEY;
     const verifyResponse = await fetch(
       `https://api.tosspayments.com/v1/payments/${encodeURIComponent(input.data.paymentKey)}`,
@@ -60,14 +64,14 @@ export async function POST(request: Request) {
     )
       throw new Error("웹훅 주문 정보가 PAGEPORT 장부와 일치하지 않습니다.");
 
-    // Persist only events whose payment was verified directly with Toss.
-    // This prevents arbitrary public requests from filling the webhook ledger.
+    // 토스에서 직접 확인된 알림만 저장해 외부인이 가짜 결제 기록을 쌓지 못하게 합니다.
     await prisma.webhookEvent.upsert({
       where: { id: eventId },
       create: { id: eventId, eventType: input.eventType, paymentKey: verified.paymentKey, payload: body },
       update: { payload: body, paymentKey: verified.paymentKey },
     });
 
+    // 결제가 취소되면 주문 상태와 다운로드 권한을 함께 바꿔 환불 후 접근을 막습니다.
     if (verified.status === "CANCELED" || verified.status === "PARTIAL_CANCELED") {
       const cancel = verified.cancels?.at(-1);
       await prisma.$transaction([

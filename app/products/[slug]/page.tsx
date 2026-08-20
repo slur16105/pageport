@@ -1,3 +1,4 @@
+// 주소의 영문 상품명(slug)에 맞는 상품을 찾아 상세 정보와 구매 시작 화면을 보여주는 페이지입니다.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublishedProduct } from "../../../lib/catalog-products";
@@ -6,6 +7,7 @@ import { PurchaseForm } from "./PurchaseForm";
 type ProductPageProps = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+  // 검색 결과나 공유 카드에 상품명이 자연스럽게 보이도록 페이지 제목과 설명을 만듭니다.
   const { slug } = await params;
   const product = await getPublishedProduct(slug);
   if (!product) return {};
@@ -20,12 +22,14 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
+  // 공개 판매 중인 상품이 없으면 잘못된 주소로 보고 404 안내 화면을 보여줍니다.
   const { slug } = await params;
   const product = await getPublishedProduct(slug);
   if (!product) notFound();
 
   return (
     <main>
+      {/* 상세 화면에서 상품 목록·구매 안내·내 구매함으로 이동하는 상단 메뉴입니다. */}
       <header className="site-header detail-header">
         <a className="brand" href="/" aria-label="페이지포트 홈">
           PAGEPORT<span>.</span>
@@ -41,6 +45,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       </header>
 
       <div className="detail-shell">
+        {/* 상품 미리보기와 가격을 확인한 뒤 이메일을 입력해 구매를 시작하는 핵심 영역입니다. */}
         <div className="breadcrumb">
           <a href="/">홈</a>
           <span>›</span>
@@ -97,6 +102,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         </section>
 
         <section className="detail-content">
+          {/* 상품 구성, 사용법, 환불 전 확인사항을 구매 전에 이해하기 쉽게 안내합니다. */}
           <div className="content-main">
             <p className="eyebrow">상품 구성</p>
             <h2>이 PDF에 들어 있어요</h2>

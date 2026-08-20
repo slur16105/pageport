@@ -1,5 +1,7 @@
 "use client";
 
+// 운영자가 이메일로 본인 확인한 뒤 상품을 등록·수정하고 주문과 환불을 관리하는 관리자 화면입니다.
+
 import { type FormEvent, useEffect, useState } from "react";
 import * as tus from "tus-js-client";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
@@ -60,6 +62,7 @@ const emptyForm: ProductForm = {
 const statusLabels: Record<string, string> = { draft: "작성 중", published: "판매 중", paused: "판매 중지" };
 
 async function uploadPdf(file: File, onProgress: (percent: number) => void) {
+  // 먼저 서버에서 일회용 업로드 허가를 받은 뒤, 전송이 끊겨도 이어 올릴 수 있는 방식으로 PDF를 보냅니다.
   const ticketResponse = await fetch("/api/admin/uploads/ticket", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -98,6 +101,7 @@ async function uploadPdf(file: File, onProgress: (percent: number) => void) {
 }
 
 export function AdminDashboard() {
+  // 로그인 여부, 보고 있는 메뉴, 상품 입력값, 주문·환불 진행 상태를 이 화면 안에서 각각 기억합니다.
   const [authenticated, setAuthenticated] = useState<boolean | null>(null);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -116,6 +120,7 @@ export function AdminDashboard() {
   const [turnstileToken, setTurnstileToken] = useState("");
 
   useEffect(() => {
+    // 화면이 처음 열리면 기존 관리자 로그인이 살아 있는지 확인하고, 맞으면 상품 목록을 바로 불러옵니다.
     fetch("/api/admin/session")
       .then((response) => response.json() as Promise<{ authenticated?: boolean }>)
       .then((data) => {
@@ -166,6 +171,7 @@ export function AdminDashboard() {
   }
 
   async function refundOrder() {
+    // 다운로드한 주문은 관리자가 환불 기준을 검토했다는 확인까지 해야 환불 요청을 보낼 수 있습니다.
     if (!refundTarget || !refundReason.trim() || (refundTarget.downloadCount > 0 && !refundReviewed)) return;
     setBusy(true);
     setMessage("토스 결제 환불을 처리하고 있습니다.");
@@ -237,6 +243,7 @@ export function AdminDashboard() {
   }
 
   async function login() {
+    // 이메일 인증번호가 맞는지 확인한 뒤 관리자 전용 세션을 만들어 관리 기능을 엽니다.
     if (!/^\d{6}$/.test(code)) {
       setMessage("6자리 인증번호를 입력해 주세요.");
       return;
@@ -294,6 +301,7 @@ export function AdminDashboard() {
   }
 
   async function saveProduct(event: FormEvent<HTMLFormElement>) {
+    // 새 PDF가 있으면 먼저 파일을 올리고, 그 저장 위치와 입력한 상품 정보를 함께 저장합니다.
     event.preventDefault();
     setBusy(true);
     setMessage(file ? "PDF 업로드를 준비하고 있습니다." : "상품을 안전하게 저장하고 있습니다.");
@@ -322,6 +330,7 @@ export function AdminDashboard() {
     }
   }
 
+  // 로그인 확인 중, 로그인 전, 로그인 후 화면을 분리해 권한 없는 상태에서 관리 내용이 보이지 않게 합니다.
   if (authenticated === null)
     return (
       <main className="admin-page">
@@ -378,6 +387,7 @@ export function AdminDashboard() {
 
   return (
     <main className="admin-page">
+      {/* 로그인 후에는 상품 관리와 주문 관리를 상단 메뉴로 오갈 수 있습니다. */}
       <header className="admin-header">
         <a className="brand" href="/">
           PAGEPORT<span>.</span>
@@ -400,6 +410,7 @@ export function AdminDashboard() {
         </div>
       </header>
       {view === "products" ? (
+        /* 상품 입력 영역과 이미 등록된 상품 목록을 나란히 보여줍니다. */
         <div className="admin-shell">
           <section className="admin-editor">
             <div className="admin-title">
@@ -573,6 +584,7 @@ export function AdminDashboard() {
           onRefundEmail={sendRefundEmail}
         />
       )}
+      {/* 환불은 되돌리기 어려우므로 별도의 확인창에서 사유와 다운로드 여부를 다시 검토합니다. */}
       <AlertDialog.Root
         open={Boolean(refundTarget)}
         onOpenChange={(open) => {
@@ -666,6 +678,7 @@ function OrderManagement({
   onRefund: (order: AdminOrder) => void;
   onRefundEmail: (order: AdminOrder) => void;
 }) {
+  // 결제 완료 건수와 합계를 계산하고, 주문별 다운로드·환불 상태를 표로 정리합니다.
   const paid = orders.filter((order) => ["paid", "test_paid"].includes(order.status));
   const sales = paid.reduce((total, order) => total + order.amount, 0);
   const statusLabel: Record<string, string> = {

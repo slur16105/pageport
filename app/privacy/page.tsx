@@ -1,3 +1,4 @@
+// 구매 과정에서 어떤 개인정보를 왜 사용하고 어떤 외부 서비스를 거치는지 설명하는 정책 페이지입니다.
 import type { Metadata } from "next";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";
@@ -5,6 +6,7 @@ export const metadata: Metadata = { title: "개인정보처리방침" };
 export default function PrivacyPage() {
   return (
     <main>
+      {/* 모든 안내 페이지에서 동일한 상단 메뉴와 하단 메뉴를 사용해 사이트 디자인을 일관되게 유지합니다. */}
       <SiteHeader />
       <article className="policy-page">
         <p className="eyebrow">개인정보처리방침</p>

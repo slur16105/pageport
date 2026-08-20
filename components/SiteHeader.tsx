@@ -1,3 +1,4 @@
+// 여러 페이지 위에 반복해서 쓰는 공통 헤더로, 로고·상품·구매 안내·재다운로드 메뉴를 제공합니다.
 import Link from "next/link";
 
 export function SiteHeader() {

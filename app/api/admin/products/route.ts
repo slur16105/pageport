@@ -1,3 +1,4 @@
+// 이 파일은 관리자가 상품 목록을 확인하고 상품 정보와 PDF 파일을 등록·수정하도록 처리합니다.
 import { z } from "zod";
 import { isAdminRequest } from "../../../../lib/admin-auth";
 import { prisma } from "../../../../lib/prisma";
@@ -27,6 +28,7 @@ const productSchema = z.object({
 });
 
 export async function GET(request: Request) {
+  // 판매 전 초안까지 포함되므로 관리자에게만 전체 상품 목록을 보여 줍니다.
   if (!(await isAdminRequest(request))) return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
   return Response.json({ products: await prisma.product.findMany({ orderBy: { updatedAt: "desc" } }) });
 }
@@ -44,6 +46,7 @@ export async function POST(request: Request) {
     let objectKey = finalObjectKey;
     const directFile = form.get("file");
     let fileSize = input.uploadedFileSize || existing?.fileSize || "";
+    // 작은 PDF는 바로 저장하되 파일 종류와 25MB 용량 제한을 먼저 검사합니다.
     if (directFile instanceof File && directFile.size > 0) {
       if (directFile.type !== "application/pdf" || directFile.size > 25 * 1024 * 1024)
         return Response.json({ error: "25MB 이하의 PDF 파일만 등록할 수 있습니다." }, { status: 400 });
@@ -56,6 +59,7 @@ export async function POST(request: Request) {
           ? `${(directFile.size / 1024 / 1024).toFixed(1)}MB`
           : `${Math.ceil(directFile.size / 1024)}KB`;
     }
+    // 재개 업로드한 큰 파일은 유효한 일회용 업로드 권한인지 확인한 뒤 정식 위치로 옮깁니다.
     if (input.uploadedObjectKey) {
       const ticket = await prisma.uploadTicket.findFirst({
         where: { objectKey: input.uploadedObjectKey, usedAt: null, expiresAt: { gt: new Date() } },

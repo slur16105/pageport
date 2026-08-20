@@ -1,5 +1,7 @@
+// 결제가 끝난 고객에게 영수증 정보, PDF 다운로드 주소, 다시 받기 주소를 안내합니다.
 import { renderPageportEmail } from "./render";
 
+// 고객이나 운영자가 입력한 문구 때문에 이메일 디자인 코드가 망가지지 않도록 보호합니다.
 function escapeHtml(value: string) {
   return value.replace(
     /[&<>'"]/g,
@@ -24,6 +26,7 @@ type PurchaseCompleteEmailInput = {
 };
 
 export async function purchaseCompleteEmail(input: PurchaseCompleteEmailInput) {
+  // 화면에 넣을 값은 안전하게 바꾸고, 금액은 한국식 원화 표기로 정리합니다.
   const productTitle = escapeHtml(input.productTitle);
   const sellerName = escapeHtml(input.sellerName);
   const orderId = escapeHtml(input.orderId);
@@ -32,6 +35,7 @@ export async function purchaseCompleteEmail(input: PurchaseCompleteEmailInput) {
   const recoveryUrl = escapeHtml(input.recoveryUrl);
 
   return {
+    // text는 단순 메일용이고 html은 PAGEPORT 디자인이 적용된 메일용입니다.
     subject: `[PAGEPORT] ${input.productTitle} 구매가 완료되었습니다`,
     text: [
       "PAGEPORT 구매가 완료되었습니다.",

@@ -1,3 +1,4 @@
+// 이 파일은 토스 시험 결제를 최종 승인하고 구매 메일과 PDF 다운로드 권한을 발급합니다.
 import { z } from "zod";
 import { downloadUrl, getOrCreatePurchaseDownloadGrant } from "../../../../lib/download-links";
 import { env } from "../../../../lib/env";
@@ -12,6 +13,7 @@ const schema = z.object({
 });
 
 async function sendReceiptIfNeeded(request: Request, orderId: string, token: string) {
+  // 메일이 이미 발송됐다면 중복 발송하지 않고, 실패하면 작업 장부에 남겨 다시 시도합니다.
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) return false;
   if (order.receiptEmailSentAt) return true;
@@ -50,6 +52,7 @@ export async function POST(request: Request) {
     const input = schema.parse(await request.json());
     const order = await prisma.order.findUnique({ where: { id: input.orderId } });
     if (!order) return Response.json({ error: "주문을 찾을 수 없습니다." }, { status: 404 });
+    // 결제 화면에서 전달된 금액이 주문 장부와 다르면 승인하지 않아 금액 변조를 막습니다.
     if (order.amount !== input.amount)
       return Response.json({ error: "주문 금액이 일치하지 않아 결제를 중단했습니다." }, { status: 400 });
     if (order.status === "test_paid" && order.paymentKey === input.paymentKey) {
@@ -62,8 +65,7 @@ export async function POST(request: Request) {
         orderId: order.id,
         status: order.status,
         approvedAt: order.approvedAt,
-        // Payment query parameters are not a long-lived download credential.
-        // A retry preserves or resends the email link without disclosing it again.
+        // 결제 주소의 정보는 다운로드 열쇠가 아닙니다. 재확인 때는 주소를 다시 노출하지 않습니다.
         downloadUrl: null,
         reissueRequired: !grant || !emailSent,
         emailSent,
@@ -71,6 +73,7 @@ export async function POST(request: Request) {
     }
     if (order.status !== "test_pending") return Response.json({ error: "이미 처리된 주문입니다." }, { status: 409 });
 
+    // 브라우저 결과만 믿지 않고 서버 비밀키로 토스에 결제 승인을 직접 요청합니다.
     const secretKey = env().TOSS_TEST_SECRET_KEY;
     const tossResponse = await fetch("https://api.tosspayments.com/v1/payments/confirm", {
       method: "POST",
@@ -89,6 +92,7 @@ export async function POST(request: Request) {
       );
 
     const approvedAt = tossResult.approvedAt ? new Date(tossResult.approvedAt) : new Date();
+    // 토스 승인이 성공한 뒤에만 주문을 결제 완료로 바꾸고 다운로드 주소를 만듭니다.
     await prisma.order.update({
       where: { id: order.id },
       data: { status: "test_paid", paymentKey: input.paymentKey, approvedAt },

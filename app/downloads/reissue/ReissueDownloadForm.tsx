@@ -1,5 +1,7 @@
 "use client";
 
+// 구매 이메일을 확인해 과거 구매 상품을 찾고, 선택한 상품의 새 다운로드 주소를 발급하는 입력 화면입니다.
+
 import { useState } from "react";
 import { TurnstileWidget } from "../../../components/TurnstileWidget";
 
@@ -12,6 +14,7 @@ type Purchase = {
 };
 
 export function ReissueDownloadForm() {
+  // 인증 전, 구매 목록 확인, 새 주소 발급 완료의 세 단계를 화면 상태로 기억합니다.
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [sent, setSent] = useState(false);
@@ -23,6 +26,7 @@ export function ReissueDownloadForm() {
   const [turnstileToken, setTurnstileToken] = useState("");
 
   function updateEmail(value: string) {
+    // 이메일을 수정하면 이전 인증과 구매 결과를 모두 지워 다른 사람의 정보가 섞이지 않게 합니다.
     setEmail(value);
     setCode("");
     setSent(false);
@@ -56,6 +60,7 @@ export function ReissueDownloadForm() {
   }
 
   async function verifyAndLoadPurchases() {
+    // 인증번호가 맞으면 같은 이메일로 결제 완료된 상품 목록을 서버에서 가져옵니다.
     if (!/^\d{6}$/.test(code)) {
       setMessage("이메일로 받은 6자리 인증번호를 입력해 주세요.");
       return;
@@ -92,6 +97,7 @@ export function ReissueDownloadForm() {
   }
 
   async function reissue(orderId: string) {
+    // 선택한 주문이 이 이메일의 구매가 맞는지 서버가 확인한 뒤 제한 시간이 있는 새 주소를 만듭니다.
     setBusy(true);
     setMessage("새 다운로드 주소를 만들고 있습니다.");
     try {
@@ -123,6 +129,7 @@ export function ReissueDownloadForm() {
 
   return (
     <div className="reissue-card">
+      {/* 아직 인증 전이면 이메일과 6자리 인증번호 입력 단계를 보여줍니다. */}
       {!result && purchases === null && (
         <>
           <label>
@@ -159,6 +166,7 @@ export function ReissueDownloadForm() {
         </>
       )}
       {!result && purchases !== null && (
+        /* 인증이 끝나면 주문번호 입력 대신 이 이메일로 구매한 상품을 선택하게 합니다. */
         <div className="purchase-history">
           <p className="verified-email">✓ {email} 확인 완료</p>
           <h2>구매한 상품</h2>
@@ -183,6 +191,7 @@ export function ReissueDownloadForm() {
         </p>
       )}
       {result && (
+        /* 발급이 끝나면 바로 받을 수 있는 버튼과 주소의 사용 기한을 안내합니다. */
         <div className="reissue-result">
           <div className="result-icon">✓</div>
           <p>새 주소 발급 완료</p>

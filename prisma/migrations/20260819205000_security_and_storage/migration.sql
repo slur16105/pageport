@@ -1,6 +1,7 @@
--- PAGEPORT security baseline: server-only data access, atomic download counting,
--- request limiting, and Supabase Storage buckets.
+-- PAGEPORT의 기본 보안, 다운로드 횟수 계산, 요청 제한, 파일 보관함을 설정하는 변경 기록입니다.
+-- 결제·고객 정보는 서버만 다루고, 고객 브라우저에는 공개 상품만 보이게 합니다.
 
+-- 모든 중요 정보표에 행 단위 보안(RLS)을 켭니다.
 ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.email_verifications ENABLE ROW LEVEL SECURITY;
@@ -10,15 +11,16 @@ ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.job_ledger ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.request_limits ENABLE ROW LEVEL SECURITY;
 
--- Browsers may only read products that the operator has explicitly published.
+-- 브라우저는 운영자가 'published(공개)'로 승인한 상품만 읽을 수 있습니다.
 CREATE POLICY "published products are public"
 ON public.products FOR SELECT
 TO anon, authenticated
 USING (status = 'published');
 
--- All customer, payment, admin and download tables intentionally have no
--- browser policy. PAGEPORT's server secret is the only application access path.
+-- 고객·결제·관리자·다운로드 정보표에는 브라우저 허용 규칙을 만들지 않습니다.
+-- 따라서 PAGEPORT 서버 비밀키를 가진 서버만 접근할 수 있습니다.
 
+-- 원본 PDF는 비공개로, 상품 미리보기 이미지는 공개로 보관하는 두 저장 공간을 만듭니다.
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES
   ('product-pdfs', 'product-pdfs', false, 52428800, ARRAY['application/pdf']),
@@ -33,6 +35,8 @@ ON storage.objects FOR SELECT
 TO anon, authenticated
 USING (bucket_id = 'product-previews');
 
+-- 유효한 주소인지 확인하고 다운로드 횟수 증가와 이용 기록 저장을 한 번에 처리합니다.
+-- 중간에 실패하면 전체가 취소되므로 횟수만 잘못 올라가는 일을 막습니다.
 CREATE OR REPLACE FUNCTION public.consume_download_grant(
   p_token_hash text,
   p_ip_hash text DEFAULT NULL,
@@ -76,6 +80,7 @@ BEGIN
 END;
 $$;
 
+-- 같은 사람이 정해진 시간 안에 허용 횟수보다 많이 요청했는지 계산합니다.
 CREATE OR REPLACE FUNCTION public.enforce_request_limit(
   p_key text,
   p_limit integer,
@@ -101,6 +106,7 @@ BEGIN
 END;
 $$;
 
+-- 위 두 기능은 일반 방문자가 직접 실행하지 못하고 서버 전용 역할만 실행하게 제한합니다.
 REVOKE ALL ON FUNCTION public.consume_download_grant(text, text, text) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.enforce_request_limit(text, integer, integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.consume_download_grant(text, text, text) TO service_role;

@@ -1,3 +1,5 @@
+// 환불이 처리된 뒤 고객에게 금액, 사유, 처리일과 다운로드 중단 사실을 알려주는 이메일입니다.
+// 이메일 본문에 들어갈 외부 문구를 안전한 글자로 바꿉니다.
 function escapeHtml(value: string) {
   return value.replace(
     /[&<>'"]/g,
@@ -22,6 +24,7 @@ type RefundCompleteEmailInput = {
 };
 
 export async function refundCompleteEmail(input: RefundCompleteEmailInput) {
+  // 시험 환불과 실제 환불은 고객이 오해하지 않도록 서로 다른 안내문을 사용합니다.
   const productTitle = escapeHtml(input.productTitle);
   const orderId = escapeHtml(input.orderId);
   const reason = escapeHtml(input.reason);
@@ -55,4 +58,5 @@ export async function refundCompleteEmail(input: RefundCompleteEmailInput) {
     }),
   };
 }
+// 모든 PAGEPORT 이메일이 같은 디자인을 사용하도록 공통 틀을 불러옵니다.
 import { renderPageportEmail } from "./render";

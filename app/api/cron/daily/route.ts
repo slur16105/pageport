@@ -1,3 +1,4 @@
+// 이 파일은 매일 만료 자료를 정리하고 실패한 이메일 발송을 자동으로 다시 시도합니다.
 import { env } from "../../../../lib/env";
 import { prisma } from "../../../../lib/prisma";
 import { downloadUrl, getOrCreatePurchaseDownloadGrant } from "../../../../lib/download-links";
@@ -9,6 +10,7 @@ async function processEmailJob(
   job: { id: string; jobType: string; payload: unknown; attempts: number },
   request: Request,
 ) {
+  // 이메일 종류에 따라 구매·환불·재다운로드 안내를 다시 보내고 성공 여부를 장부에 기록합니다.
   const payload = job.payload as { orderId?: string; url?: string };
   if (!payload.orderId) throw new Error("작업에 주문번호가 없습니다.");
   const order = await prisma.order.findUnique({ where: { id: payload.orderId } });
@@ -63,6 +65,7 @@ async function processEmailJob(
 }
 
 export async function GET(request: Request) {
+  // 예약 작업 전용 비밀키를 확인해 외부인이 정리 작업을 임의로 실행하지 못하게 합니다.
   if (request.headers.get("authorization") !== `Bearer ${env().CRON_SECRET}`)
     return Response.json({ error: "예약 작업 인증이 필요합니다." }, { status: 401 });
   const now = new Date();
@@ -71,6 +74,7 @@ export async function GET(request: Request) {
     prisma.requestLimit.deleteMany({ where: { expiresAt: { lt: now } } }),
     prisma.uploadTicket.deleteMany({ where: { expiresAt: { lt: now } } }),
   ]);
+  // 한 번에 처리할 양과 재시도 횟수를 제한해 반복 실패가 서버에 부담을 주지 않게 합니다.
   const jobs = await prisma.jobLedger.findMany({
     where: { status: "pending", nextRunAt: { lte: now }, attempts: { lt: 5 } },
     take: 25,

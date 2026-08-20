@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scrubSensitiveUrl, scrubTelemetryEvent } from "../lib/privacy";
 
+// 오류·방문 통계 서비스로 결제키나 다운로드 주소가 전송되지 않도록 가리는 기능을 확인합니다.
 describe("민감 주소 제거", () => {
   it("결제 식별값은 지우고 일반 분석값은 유지한다", () => {
     expect(

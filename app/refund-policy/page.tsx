@@ -1,3 +1,4 @@
+// 디지털 상품을 다운로드하기 전과 후의 환불 기준을 구매자에게 안내하는 페이지입니다.
 import type { Metadata } from "next";
 import { SiteFooter } from "../../components/SiteFooter";
 import { SiteHeader } from "../../components/SiteHeader";

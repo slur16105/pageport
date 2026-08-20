@@ -1,11 +1,14 @@
 "use client";
 
+// 사용자가 카테고리를 누르면 해당 PDF만 골라 보여주는 메인 상품 목록 부품입니다.
+
 import { useMemo, useState } from "react";
 import type { Product } from "../app/data/products";
 
 const categories = ["전체", "업무·생산성", "공부·교육", "디자인", "돈관리", "생활", "취미"];
 
 export function ProductCatalog({ products }: { products: Product[] }) {
+  // 현재 선택한 분류를 기억하고, 전체가 아니면 같은 분류의 상품만 새 목록으로 만듭니다.
   const [selectedCategory, setSelectedCategory] = useState("전체");
   const filteredProducts = useMemo(
     () =>
@@ -15,6 +18,7 @@ export function ProductCatalog({ products }: { products: Product[] }) {
 
   return (
     <>
+      {/* 버튼을 누를 때 선택 상태가 바뀌며, 보조기기도 aria-pressed로 현재 선택을 알 수 있습니다. */}
       <section className="category-bar" aria-label="상품 카테고리">
         {categories.map((category) => {
           const selected = category === selectedCategory;

@@ -1,8 +1,11 @@
 "use client";
 
+// 메인 첫 화면의 소개 문구와 종이 그래픽 모션을 담당하는 히어로 영역입니다.
+
 import type { PointerEvent } from "react";
 
 function resetPointerMotion(element: HTMLElement) {
+  // 마우스가 그래픽 밖으로 나가면 종이들을 원래 위치와 각도로 부드럽게 되돌릴 준비를 합니다.
   element.style.setProperty("--hero-back-x", "0px");
   element.style.setProperty("--hero-back-y", "0px");
   element.style.setProperty("--hero-back-rotate", "-9deg");
@@ -15,6 +18,7 @@ function resetPointerMotion(element: HTMLElement) {
 
 export function HeroSection() {
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    // 터치 화면이나 '동작 줄이기' 설정에서는 효과를 꺼서 불편함과 어지러움을 예방합니다.
     if (event.pointerType === "touch" || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const art = event.currentTarget;
@@ -22,6 +26,7 @@ export function HeroSection() {
     const x = ((event.clientX - rect.left) / rect.width - 0.5) * 2;
     const y = ((event.clientY - rect.top) / rect.height - 0.5) * 2;
 
+    // 마우스 방향에 따라 앞·뒤 종이를 조금 다르게 움직여 가벼운 입체감을 만듭니다.
     art.style.setProperty("--hero-back-x", `${(-x * 5).toFixed(2)}px`);
     art.style.setProperty("--hero-back-y", `${(-y * 4).toFixed(2)}px`);
     art.style.setProperty("--hero-back-rotate", `${(-9 - x * 1.2).toFixed(2)}deg`);
@@ -34,6 +39,7 @@ export function HeroSection() {
 
   return (
     <section className="hero hero-motion" id="top">
+      {/* 왼쪽은 서비스 가치와 주요 이동 버튼, 오른쪽은 PDF 상품을 상징하는 움직이는 종이 그래픽입니다. */}
       <div className="hero-copy">
         <p className="eyebrow">실무에 바로 쓰는 디지털 문서</p>
         <h1>

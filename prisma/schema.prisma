@@ -1,3 +1,5 @@
+// 이 파일은 PAGEPORT 데이터베이스의 전체 설계도입니다.
+// 표(model)는 보관할 정보의 종류, 각 줄은 그 정보의 이름과 형식을 뜻합니다.
 generator client {
   provider = "prisma-client-js"
 }
@@ -6,6 +8,7 @@ datasource db {
   provider = "postgresql"
 }
 
+// 판매 상품의 제목, 가격, 파일 위치와 공개 상태를 보관합니다.
 model Product {
   id          String   @id @default(uuid()) @db.Uuid
   slug        String   @unique
@@ -31,6 +34,7 @@ model Product {
   @@map("products")
 }
 
+// 고객의 주문, 결제·환불 상태와 누적 다운로드 횟수를 보관합니다.
 model Order {
   id                 String          @id
   productId          String          @db.Uuid @map("product_id")
@@ -63,6 +67,8 @@ model Order {
   @@map("orders")
 }
 
+// 구매 전 이메일 소유 여부를 확인하기 위한 인증번호와 만료 시각을 보관합니다.
+// 실제 인증번호 대신 해시값을 저장하므로 데이터베이스만으로 번호를 알아낼 수 없습니다.
 model EmailVerification {
   id                    String    @id @default(uuid()) @db.Uuid
   email                 String
@@ -81,6 +87,7 @@ model EmailVerification {
   @@map("email_verifications")
 }
 
+// 결제한 고객에게 발급하는 기간·횟수 제한 다운로드 권한입니다.
 model DownloadGrant {
   id             String          @id @default(uuid()) @db.Uuid
   orderId        String          @map("order_id")
@@ -100,6 +107,7 @@ model DownloadGrant {
   @@map("download_grants")
 }
 
+// 언제 어떤 주문이 파일을 받았는지 남기는 보안·고객지원용 기록입니다.
 model DownloadEvent {
   id          String        @id @default(uuid()) @db.Uuid
   orderId     String        @map("order_id")
@@ -114,6 +122,7 @@ model DownloadEvent {
   @@map("download_events")
 }
 
+// 토스페이먼츠가 보내는 결제 상태 알림을 중복 없이 처리하기 위한 장부입니다.
 model WebhookEvent {
   id          String    @id
   eventType   String    @map("event_type")
@@ -128,6 +137,7 @@ model WebhookEvent {
   @@map("webhook_events")
 }
 
+// 정해진 시간에 다시 처리해야 하는 작업을 잊지 않도록 기록하는 작업 장부입니다.
 model JobLedger {
   id          String    @id @default(uuid()) @db.Uuid
   jobKey      String    @unique @map("job_key")
@@ -146,6 +156,7 @@ model JobLedger {
   @@map("job_ledger")
 }
 
+// 짧은 시간에 같은 요청이 지나치게 반복되는 것을 막기 위한 횟수 기록입니다.
 model RequestLimit {
   key         String   @id
   count       Int      @default(0)
@@ -156,6 +167,7 @@ model RequestLimit {
   @@map("request_limits")
 }
 
+// 관리자가 큰 PDF를 끊김 없이 올릴 때 잠시 사용하는 일회성 업로드 허가증입니다.
 model UploadTicket {
   id        String   @id @default(uuid()) @db.Uuid
   objectKey String   @unique @map("object_key")

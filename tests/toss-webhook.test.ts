@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+// 토스 서버와 데이터베이스를 실제로 호출하지 않고 웹훅 처리만 안전하게 시험하는 가짜 기능들입니다.
 const mocks = vi.hoisted(() => ({
   eventFind: vi.fn(),
   eventUpsert: vi.fn(),
@@ -29,6 +30,7 @@ vi.mock("../lib/prisma", () => ({
 import { POST } from "../app/api/webhooks/toss/route";
 
 function webhookRequest(paymentKey = "test-payment-key") {
+  // 토스페이먼츠가 결제 상태 변경 시 보내는 것과 같은 모양의 시험 요청을 만듭니다.
   return new Request("https://pageport.example/api/webhooks/toss", {
     method: "POST",
     headers: {
@@ -44,6 +46,7 @@ function webhookRequest(paymentKey = "test-payment-key") {
 }
 
 describe("토스 웹훅 검증", () => {
+  // 각 시험은 이전 시험의 기록이 남지 않은 깨끗한 상태에서 시작합니다.
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.allowRequest.mockResolvedValue(true);

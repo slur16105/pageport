@@ -1,3 +1,4 @@
+# 자동 생성되거나 용량이 큰 파일은 코드 모양 정리 대상에서 제외합니다.
 .next
 node_modules
 coverage

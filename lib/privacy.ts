@@ -1,6 +1,8 @@
+// 이 파일은 오류·통계 서비스로 보내기 전에 결제키, 주문번호, 다운로드 주소를 가립니다.
 const SENSITIVE_QUERY_KEYS = ["paymentKey", "orderId", "amount", "emailVerificationToken", "code"];
 
 export function scrubSensitiveUrl(value: string) {
+  // 주소 자체는 분석에 남기되 구매자를 식별하거나 결제에 쓰이는 값은 삭제합니다.
   try {
     const absolute = /^[a-z][a-z\d+.-]*:/i.test(value);
     const url = new URL(value, "https://pageport.invalid");
@@ -25,6 +27,7 @@ type TelemetryEvent = {
 };
 
 export function scrubTelemetryEvent<T extends TelemetryEvent>(event: T) {
+  // 오류 보고 내용의 주소, 쿠키, 입력 데이터에서도 민감한 정보를 한 번 더 제거합니다.
   if (event.request) {
     if (event.request.url) event.request.url = scrubSensitiveUrl(event.request.url);
     delete event.request.query_string;

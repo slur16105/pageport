@@ -1,3 +1,4 @@
+// 이 파일은 구매자만 일정 시간과 횟수 안에서 쓸 수 있는 PDF 다운로드 주소를 관리합니다.
 import { createHash, createHmac, randomBytes } from "node:crypto";
 import { env } from "./env";
 import { prisma } from "./prisma";
@@ -22,9 +23,9 @@ function grantIsUsable(grant: {
 }
 
 /**
- * The first purchase link is deterministic so a retried payment confirmation can
- * return the same URL without revoking the link that was already emailed. Once a
- * customer reissues or exhausts that link, confirmation retries must not revive it.
+ * 최초 구매 주소는 결제 확인이 반복되어도 같은 주소를 유지합니다.
+ * 구매자에게 이미 보낸 주소가 갑자기 무효가 되는 일을 막기 위한 처리입니다.
+ * 단, 재발급했거나 모두 사용한 주소를 결제 재확인으로 되살리지는 않습니다.
  */
 export async function getOrCreatePurchaseDownloadGrant(orderId: string, productSlug: string) {
   const token = purchaseDownloadToken(orderId);
@@ -35,8 +36,7 @@ export async function getOrCreatePurchaseDownloadGrant(orderId: string, productS
     return grantIsUsable(deterministicGrant) ? { token, expiresAt: deterministicGrant.expiresAt } : null;
   }
 
-  // A random grant means the buyer has already used the explicit reissue flow.
-  // Its raw token is intentionally not stored, so do not replace or revive it.
+  // 임의 토큰 주소가 이미 있다면 구매자가 재발급 절차를 거친 것이므로 새 주소로 덮어쓰지 않습니다.
   const activeGrant = await getExistingDownloadGrant(orderId);
   if (activeGrant) return null;
 
@@ -52,8 +52,7 @@ export async function getOrCreatePurchaseDownloadGrant(orderId: string, productS
     });
     return { token, expiresAt };
   } catch (error) {
-    // Concurrent confirmation requests can race on the deterministic token.
-    // Re-read it and return the winner instead of creating another grant.
+    // 동시에 결제 확인 요청이 와도 먼저 만들어진 주소 하나만 사용해 중복 생성을 막습니다.
     const concurrentGrant = await prisma.downloadGrant.findUnique({ where: { tokenHash } });
     if (concurrentGrant && grantIsUsable(concurrentGrant)) {
       return { token, expiresAt: concurrentGrant.expiresAt };
@@ -63,6 +62,7 @@ export async function getOrCreatePurchaseDownloadGrant(orderId: string, productS
 }
 
 export async function createDownloadGrant(orderId: string, productSlug: string) {
+  // 새 주소를 발급할 때 이전 주소를 폐기해 유출된 예전 주소가 계속 쓰이지 않게 합니다.
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + LINK_LIFETIME_MS);
   await prisma.$transaction([
