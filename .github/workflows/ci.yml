@@ -32,7 +32,7 @@ jobs:
     # 설치 → 코드 생성 → 타입·형식·기능·브라우저 검사 순서로 진행합니다.
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 11.9.0
       - uses: actions/setup-node@v4
