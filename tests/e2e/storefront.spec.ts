@@ -51,3 +51,16 @@ test("히어로 문서가 등장하고 마우스에 가볍게 반응한다", asy
   await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.35);
   await expect.poll(() => art.evaluate((element) => element.style.getPropertyValue("--hero-front-x"))).not.toBe("0px");
 });
+
+test("잘못된 주소에서도 공통 메뉴와 다음 행동을 안내한다", async ({ page }) => {
+  // 고객이 잘못된 주소를 입력해도 막다른 화면이 아니라 상품 목록으로 돌아갈 수 있어야 합니다.
+  await page.goto("/this-page-does-not-exist");
+  await expect(page.getByRole("heading", { name: "찾으시는 페이지가 없어요." })).toBeVisible();
+  await expect(page.getByRole("banner")).toBeVisible();
+  await expect(page.getByRole("contentinfo")).toBeVisible();
+  await expect(page.getByRole("link", { name: "상품 둘러보기" })).toHaveAttribute("href", "/#products");
+
+  await page.goto("/access/unavailable?reason=session-expired");
+  await expect(page.getByRole("heading", { name: "인증 시간이 지나 다시 확인이 필요해요." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "다시 인증하기" })).toHaveAttribute("href", "/downloads/reissue");
+});

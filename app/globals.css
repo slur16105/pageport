@@ -2373,6 +2373,166 @@ footer small {
     display: none;
   }
 }
+
+/* 잘못된 주소·만료된 인증·권한 부족처럼 접근할 수 없는 상황과 다음 행동을 함께 보여주는 화면입니다. */
+.access-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    linear-gradient(rgba(23, 35, 29, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 35, 29, 0.035) 1px, transparent 1px), #e8dfd1;
+  background-size: 36px 36px;
+}
+.access-page > footer {
+  background: var(--cream);
+}
+.access-shell {
+  flex: 1;
+  width: min(1120px, 90vw);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(240px, 0.78fr) minmax(440px, 1.22fr);
+  align-items: center;
+  gap: 9vw;
+  padding: 72px 0 86px;
+}
+.access-mark {
+  position: relative;
+  width: min(100%, 330px);
+  aspect-ratio: 4/5;
+  display: flex;
+  align-items: flex-end;
+  padding: 28px;
+  overflow: hidden;
+  border: 1px solid var(--ink);
+  background: #f2cf58;
+  box-shadow: 16px 16px 0 rgba(23, 35, 29, 0.14);
+}
+.access-mark::before,
+.access-mark::after {
+  position: absolute;
+  content: "";
+  border: 1px solid rgba(23, 35, 29, 0.28);
+  border-radius: 50%;
+}
+.access-mark::before {
+  width: 210px;
+  height: 210px;
+  top: -72px;
+  left: -58px;
+}
+.access-mark::after {
+  width: 130px;
+  height: 130px;
+  top: -28px;
+  left: -18px;
+}
+.access-mark span {
+  position: relative;
+  z-index: 1;
+  font: 900 clamp(48px, 6.5vw, 84px)/0.82 var(--font-geist-sans);
+  letter-spacing: -0.09em;
+}
+.access-mark i {
+  position: absolute;
+  top: 22px;
+  right: 24px;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  background: #fff8ec;
+  font:
+    400 32px/1 Georgia,
+    serif;
+}
+.access-copy h1 {
+  max-width: 720px;
+  margin: 12px 0 24px;
+  font:
+    500 clamp(46px, 5.5vw, 76px)/1.03 Georgia,
+    serif;
+  letter-spacing: -0.06em;
+  word-break: keep-all;
+}
+.access-description {
+  max-width: 640px;
+  margin: 0;
+  color: #526058;
+  font-size: 17px;
+  line-height: 1.8;
+  word-break: keep-all;
+}
+.access-next-step {
+  max-width: 640px;
+  margin-top: 30px;
+  padding: 22px 24px;
+  border: 1px solid rgba(23, 35, 29, 0.3);
+  background: rgba(255, 250, 240, 0.72);
+}
+.access-next-step strong {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.access-next-step ol {
+  margin: 0;
+  padding-left: 22px;
+  color: #46534c;
+  line-height: 1.75;
+}
+.access-next-step li + li {
+  margin-top: 4px;
+}
+.access-actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 32px;
+}
+.access-actions .primary-button {
+  padding: 15px 22px;
+}
+.access-actions > a:last-child {
+  border-bottom: 1px solid currentColor;
+  font-size: 14px;
+  font-weight: 800;
+}
+@media (max-width: 760px) {
+  .access-page .site-header nav {
+    display: none;
+  }
+  .access-shell {
+    grid-template-columns: 1fr;
+    gap: 50px;
+    padding: 48px 0 68px;
+  }
+  .access-mark {
+    width: 190px;
+    aspect-ratio: 4/3;
+    padding: 20px;
+    box-shadow: 9px 9px 0 rgba(23, 35, 29, 0.14);
+  }
+  .access-mark span {
+    font-size: 46px;
+  }
+  .access-mark i {
+    width: 42px;
+    height: 42px;
+    top: 14px;
+    right: 15px;
+  }
+  .access-copy h1 {
+    font-size: 47px;
+  }
+  .access-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
 .order-summary {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
