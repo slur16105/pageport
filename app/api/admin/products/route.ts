@@ -1,99 +1,106 @@
-import { desc, eq } from "drizzle-orm";
-import { getDb, getFiles } from "../../../../db";
-import { ensureProductsSchema } from "../../../../db/ensure-products";
-import { catalogProducts } from "../../../../db/schema";
+// 이 파일은 관리자가 상품 목록을 확인하고 상품 정보와 PDF 파일을 등록·수정하도록 처리합니다.
+import { z } from "zod";
 import { isAdminRequest } from "../../../../lib/admin-auth";
-import { seedSampleProducts } from "../../../../lib/catalog-products";
+import { prisma } from "../../../../lib/prisma";
 import { productObjectKey } from "../../../../lib/product-files";
+import { PRIVATE_PDF_BUCKET, supabaseAdmin } from "../../../../lib/supabase";
 
-const MAX_PDF_BYTES = 25 * 1024 * 1024;
-const STATUSES = new Set(["draft", "published", "paused"]);
-
-export const config = { api: { bodyParser: { sizeLimit: "26mb" } } };
-
-function productDto(product: typeof catalogProducts.$inferSelect) {
-  return { ...product, includes: JSON.parse(product.includesJson) as string[] };
-}
-
-async function createProductSlug() {
-  const db = getDb();
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const candidate = `pdf-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
-    const [duplicate] = await db.select({ slug: catalogProducts.slug }).from(catalogProducts).where(eq(catalogProducts.slug, candidate)).limit(1);
-    if (!duplicate) return candidate;
-  }
-  throw new Error("상품 주소를 만들지 못했습니다. 다시 저장해 주세요.");
-}
+const productSchema = z.object({
+  slug: z.string().optional(),
+  title: z.string().min(1),
+  sellerName: z.string().min(1),
+  category: z.string().min(1),
+  description: z.string().min(1),
+  summary: z.string().min(1),
+  mark: z.string().min(1).max(12),
+  accent: z.string().min(1),
+  status: z.enum(["draft", "published", "paused"]),
+  amount: z.coerce.number().int().min(100),
+  pages: z.coerce.number().int().min(1),
+  includes: z.string().transform((value) =>
+    value
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  ),
+  uploadedObjectKey: z.string().optional(),
+  uploadedFileSize: z.string().optional(),
+});
 
 export async function GET(request: Request) {
+  // 판매 전 초안까지 포함되므로 관리자에게만 전체 상품 목록을 보여 줍니다.
   if (!(await isAdminRequest(request))) return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
-  await seedSampleProducts();
-  const products = await getDb().select().from(catalogProducts).orderBy(desc(catalogProducts.updatedAt));
-  return Response.json({ products: products.map(productDto) });
+  return Response.json({ products: await prisma.product.findMany({ orderBy: { updatedAt: "desc" } }) });
 }
 
 export async function POST(request: Request) {
   try {
-    if (!(await isAdminRequest(request))) return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
+    if (!(await isAdminRequest(request)))
+      return Response.json({ error: "관리자 로그인이 필요합니다." }, { status: 401 });
     const form = await request.formData();
-    const requestedSlug = String(form.get("slug") ?? "").trim().toLowerCase();
-    const title = String(form.get("title") ?? "").trim();
-    const sellerName = String(form.get("sellerName") ?? "").trim();
-    const category = String(form.get("category") ?? "").trim();
-    const description = String(form.get("description") ?? "").trim();
-    const summary = String(form.get("summary") ?? "").trim();
-    const mark = String(form.get("mark") ?? "PDF").trim().slice(0, 12).toUpperCase();
-    const accent = String(form.get("accent") ?? "mint").trim();
-    const status = String(form.get("status") ?? "draft").trim();
-    const amount = Number(form.get("amount"));
-    const pages = Number(form.get("pages"));
-    const includes = String(form.get("includes") ?? "").split("\n").map((item) => item.trim()).filter(Boolean);
-    const file = form.get("file");
-
-    if (!title || !sellerName || !category || !description || !summary || !mark || !Number.isInteger(amount) || amount < 100 || !Number.isInteger(pages) || pages < 1 || !includes.length || !STATUSES.has(status)) {
-      return Response.json({ error: "필수 상품 정보를 다시 확인해 주세요." }, { status: 400 });
+    const input = productSchema.parse(Object.fromEntries(form.entries()));
+    const existing = input.slug ? await prisma.product.findUnique({ where: { slug: input.slug } }) : null;
+    if (input.slug && !existing) return Response.json({ error: "수정할 상품을 찾지 못했습니다." }, { status: 404 });
+    const slug = existing?.slug ?? `pdf-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
+    const finalObjectKey = existing?.objectKey || productObjectKey(slug);
+    let objectKey = finalObjectKey;
+    const directFile = form.get("file");
+    let fileSize = input.uploadedFileSize || existing?.fileSize || "";
+    // 작은 PDF는 바로 저장하되 파일 종류와 25MB 용량 제한을 먼저 검사합니다.
+    if (directFile instanceof File && directFile.size > 0) {
+      if (directFile.type !== "application/pdf" || directFile.size > 25 * 1024 * 1024)
+        return Response.json({ error: "25MB 이하의 PDF 파일만 등록할 수 있습니다." }, { status: 400 });
+      const { error } = await supabaseAdmin()
+        .storage.from(PRIVATE_PDF_BUCKET)
+        .upload(objectKey, directFile, { contentType: "application/pdf", upsert: true });
+      if (error) throw error;
+      fileSize =
+        directFile.size >= 1024 * 1024
+          ? `${(directFile.size / 1024 / 1024).toFixed(1)}MB`
+          : `${Math.ceil(directFile.size / 1024)}KB`;
     }
-    if (requestedSlug && !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(requestedSlug)) {
-      return Response.json({ error: "상품 주소 정보가 올바르지 않습니다." }, { status: 400 });
+    // 재개 업로드한 큰 파일은 유효한 일회용 업로드 권한인지 확인한 뒤 정식 위치로 옮깁니다.
+    if (input.uploadedObjectKey) {
+      const ticket = await prisma.uploadTicket.findFirst({
+        where: { objectKey: input.uploadedObjectKey, usedAt: null, expiresAt: { gt: new Date() } },
+      });
+      if (!ticket)
+        return Response.json({ error: "업로드 권한이 만료되었습니다. PDF를 다시 선택해 주세요." }, { status: 400 });
+      const { error } = await supabaseAdmin()
+        .storage.from(PRIVATE_PDF_BUCKET)
+        .move(input.uploadedObjectKey, finalObjectKey);
+      if (error) throw error;
+      await prisma.uploadTicket.update({ where: { id: ticket.id }, data: { usedAt: new Date() } });
+      objectKey = finalObjectKey;
     }
-
-    await ensureProductsSchema();
-    const db = getDb();
-    const [existing] = requestedSlug
-      ? await db.select().from(catalogProducts).where(eq(catalogProducts.slug, requestedSlug)).limit(1)
-      : [];
-    if (requestedSlug && !existing) {
-      return Response.json({ error: "수정할 상품을 찾지 못했습니다. 목록에서 다시 선택해 주세요." }, { status: 404 });
-    }
-    const slug = existing?.slug ?? await createProductSlug();
-    const hasFile = file instanceof File && file.size > 0;
-    if (!existing && !hasFile) return Response.json({ error: "새 상품에는 PDF 파일이 필요합니다." }, { status: 400 });
-    if (hasFile && (!file.name.toLowerCase().endsWith(".pdf") || file.size > MAX_PDF_BYTES)) {
-      return Response.json({ error: "25MB 이하의 PDF 파일만 등록할 수 있습니다." }, { status: 400 });
-    }
-
-    const objectKey = existing?.objectKey ?? productObjectKey(slug);
-    let fileSize = existing?.fileSize ?? "";
-    if (hasFile) {
-      const bytes = file.size;
-      fileSize = bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)}MB` : `${Math.ceil(bytes / 1024)}KB`;
-      await getFiles().put(objectKey, file.stream(), { httpMetadata: { contentType: "application/pdf" }, customMetadata: { productSlug: slug } });
-    }
-    if (status === "published" && !(await getFiles().head(objectKey))) {
-      return Response.json({ error: "PDF 파일이 있어야 판매를 시작할 수 있습니다." }, { status: 400 });
-    }
-
-    const updatedAt = new Date().toISOString();
-    const [saved] = await db.insert(catalogProducts).values({
-      slug, category, title, sellerName, description, amount, rating: existing?.rating ?? "0.0", reviews: existing?.reviews ?? 0,
-      accent, mark, pages, fileSize, summary, includesJson: JSON.stringify(includes), status, objectKey, updatedAt,
-    }).onConflictDoUpdate({
-      target: catalogProducts.slug,
-      set: { category, title, sellerName, description, amount, accent, mark, pages, fileSize, summary, includesJson: JSON.stringify(includes), status, objectKey, updatedAt },
-    }).returning();
-    return Response.json({ product: productDto(saved) });
+    if (!existing && !input.uploadedObjectKey && !(directFile instanceof File && directFile.size > 0))
+      return Response.json({ error: "새 상품에는 PDF 파일이 필요합니다." }, { status: 400 });
+    const values = {
+      category: input.category,
+      title: input.title,
+      sellerName: input.sellerName,
+      description: input.description,
+      amount: input.amount,
+      accent: input.accent,
+      mark: input.mark.toUpperCase(),
+      pages: input.pages,
+      fileSize,
+      summary: input.summary,
+      includes: input.includes,
+      status: input.status,
+      objectKey,
+    };
+    const product = existing
+      ? await prisma.product.update({ where: { id: existing.id }, data: values })
+      : await prisma.product.create({ data: { slug, ...values } });
+    return Response.json({ product });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "상품 저장 중 문제가 발생했습니다.";
-    return Response.json({ error: message }, { status: 500 });
+    const message =
+      error instanceof z.ZodError
+        ? "필수 상품 정보를 다시 확인해 주세요."
+        : error instanceof Error
+          ? error.message
+          : "상품 저장 중 문제가 발생했습니다.";
+    return Response.json({ error: message }, { status: error instanceof z.ZodError ? 400 : 500 });
   }
 }

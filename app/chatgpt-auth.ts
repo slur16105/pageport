@@ -1,3 +1,4 @@
+// ChatGPT 안에서 접속했을 때 로그인한 사용자 정보를 읽고, 안전한 로그인·로그아웃 이동 주소를 만드는 도우미입니다.
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -11,14 +12,14 @@ export type ChatGPTUser = {
 const USER_ID_HEADER = "oai-authenticated-user-id";
 const USER_EMAIL_HEADER = "oai-authenticated-user-email";
 const USER_FULL_NAME_HEADER = "oai-authenticated-user-full-name";
-const USER_FULL_NAME_ENCODING_HEADER =
-  "oai-authenticated-user-full-name-encoding";
+const USER_FULL_NAME_ENCODING_HEADER = "oai-authenticated-user-full-name-encoding";
 const PERCENT_ENCODED_UTF8 = "percent-encoded-utf-8";
 const SIGN_IN_PATH = "/signin-with-chatgpt";
 const SIGN_OUT_PATH = "/signout-with-chatgpt";
 const CALLBACK_PATH = "/callback";
 
 export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
+  // ChatGPT가 전달한 사용자 번호와 이메일이 모두 있을 때만 로그인한 사용자로 인정합니다.
   const requestHeaders = await headers();
   const userId = requestHeaders.get(USER_ID_HEADER);
   const email = requestHeaders.get(USER_EMAIL_HEADER);
@@ -26,8 +27,7 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
 
   const encodedFullName = requestHeaders.get(USER_FULL_NAME_HEADER);
   const fullName =
-    encodedFullName &&
-    requestHeaders.get(USER_FULL_NAME_ENCODING_HEADER) === PERCENT_ENCODED_UTF8
+    encodedFullName && requestHeaders.get(USER_FULL_NAME_ENCODING_HEADER) === PERCENT_ENCODED_UTF8
       ? safeDecodeURIComponent(encodedFullName)
       : null;
 
@@ -39,9 +39,8 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   };
 }
 
-export async function requireChatGPTUser(
-  returnTo: string,
-): Promise<ChatGPTUser> {
+export async function requireChatGPTUser(returnTo: string): Promise<ChatGPTUser> {
+  // 로그인이 꼭 필요한 화면에서는 로그인 후 원래 화면으로 돌아오도록 안내합니다.
   const user = await getChatGPTUser();
   if (user) return user;
 
@@ -59,6 +58,7 @@ export function chatGPTSignOutPath(returnTo = "/"): string {
 }
 
 function safeRelativeReturnPath(value: string): string {
+  // 외부 사이트로 몰래 이동시키는 주소를 막고 PAGEPORT 안의 안전한 주소만 허용합니다.
   if (!value.startsWith("/") || value.startsWith("//")) return "/";
 
   let url: URL;
@@ -74,11 +74,7 @@ function safeRelativeReturnPath(value: string): string {
 }
 
 function isReservedAuthPath(pathname: string): boolean {
-  return (
-    pathname === SIGN_IN_PATH ||
-    pathname === SIGN_OUT_PATH ||
-    pathname === CALLBACK_PATH
-  );
+  return pathname === SIGN_IN_PATH || pathname === SIGN_OUT_PATH || pathname === CALLBACK_PATH;
 }
 
 function safeDecodeURIComponent(value: string): string | null {

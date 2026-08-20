@@ -1,42 +1,41 @@
-import { env } from "cloudflare:workers";
-import { and, eq, gt, isNotNull } from "drizzle-orm";
-import { getDb } from "../db";
-import { ensureEmailVerificationsSchema } from "../db/ensure-email-verifications";
-import { emailVerifications } from "../db/schema";
+// 이 파일은 이메일 인증값을 안전하게 보관하고, 인증 완료 여부와 일회 사용을 확인합니다.
+import { createHash } from "node:crypto";
+import { env } from "./env";
+import { prisma } from "./prisma";
 
-export function getEmailVerificationSecret() {
-  const runtimeEnv = env as unknown as Record<string, string | undefined>;
-  const secret = runtimeEnv.EMAIL_VERIFICATION_SECRET;
-  if (!secret || secret.length < 24) throw new Error("EMAIL_VERIFICATION_SECRET 설정이 필요합니다.");
-  return secret;
-}
-
-export async function hashVerificationValue(value: string) {
-  const bytes = new TextEncoder().encode(`${getEmailVerificationSecret()}:${value}`);
-  const digest = await crypto.subtle.digest("SHA-256", bytes);
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+export function hashVerificationValue(value: string) {
+  // 원본 인증번호나 토큰 대신 되돌릴 수 없는 해시만 저장해 유출 위험을 줄입니다.
+  return createHash("sha256").update(`${env().EMAIL_VERIFICATION_SECRET}:${value}`).digest("hex");
 }
 
 export async function verifyEmailToken(email: string, token: string) {
-  await ensureEmailVerificationsSchema();
-  const tokenHash = await hashVerificationValue(token);
-  const [record] = await getDb().select({ email: emailVerifications.email }).from(emailVerifications).where(and(
-    eq(emailVerifications.email, email),
-    eq(emailVerifications.verificationTokenHash, tokenHash),
-    isNotNull(emailVerifications.verifiedAt),
-    gt(emailVerifications.expiresAt, Date.now()),
-  )).limit(1);
+  const record = await prisma.emailVerification.findFirst({
+    where: {
+      email,
+      verificationTokenHash: hashVerificationValue(token),
+      verifiedAt: { not: null },
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
   return Boolean(record);
 }
 
 export async function consumeEmailToken(email: string, token: string) {
-  await ensureEmailVerificationsSchema();
-  const tokenHash = await hashVerificationValue(token);
-  const consumed = await getDb().update(emailVerifications).set({ verificationTokenHash: null }).where(and(
-    eq(emailVerifications.email, email),
-    eq(emailVerifications.verificationTokenHash, tokenHash),
-    isNotNull(emailVerifications.verifiedAt),
-    gt(emailVerifications.expiresAt, Date.now()),
-  )).returning({ email: emailVerifications.email });
-  return consumed.length === 1;
+  // 결제·재다운로드 같은 중요 작업에 사용한 인증 토큰은 즉시 폐기해 재사용을 막습니다.
+  const record = await prisma.emailVerification.findFirst({
+    where: {
+      email,
+      verificationTokenHash: hashVerificationValue(token),
+      verifiedAt: { not: null },
+      expiresAt: { gt: new Date() },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+  if (!record) return false;
+  const result = await prisma.emailVerification.updateMany({
+    where: { id: record.id, verificationTokenHash: record.verificationTokenHash },
+    data: { verificationTokenHash: null },
+  });
+  return result.count === 1;
 }

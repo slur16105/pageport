@@ -1,0 +1,180 @@
+// 이 파일은 PAGEPORT 데이터베이스의 전체 설계도입니다.
+// 표(model)는 보관할 정보의 종류, 각 줄은 그 정보의 이름과 형식을 뜻합니다.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 판매 상품의 제목, 가격, 파일 위치와 공개 상태를 보관합니다.
+model Product {
+  id          String   @id @default(uuid()) @db.Uuid
+  slug        String   @unique
+  category    String
+  title       String
+  sellerName  String   @map("seller_name")
+  description String
+  amount      Int
+  accent      String   @default("mint")
+  mark        String
+  pages       Int
+  fileSize    String   @map("file_size")
+  summary     String
+  includes    String[] @default([])
+  status      String   @default("draft")
+  objectKey   String   @map("object_key")
+  previewKeys String[] @default([]) @map("preview_keys")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  orders      Order[]
+
+  @@index([status, updatedAt])
+  @@map("products")
+}
+
+// 고객의 주문, 결제·환불 상태와 누적 다운로드 횟수를 보관합니다.
+model Order {
+  id                 String          @id
+  productId          String          @db.Uuid @map("product_id")
+  productSlug        String          @map("product_slug")
+  productTitle       String          @map("product_title")
+  sellerName         String          @map("seller_name")
+  buyerEmail         String          @map("buyer_email")
+  amount             Int
+  currency           String          @default("KRW")
+  status             String          @default("pending")
+  isTest             Boolean         @default(true) @map("is_test")
+  emailVerifiedAt    DateTime         @map("email_verified_at")
+  paymentKey         String?          @unique @map("payment_key")
+  approvedAt         DateTime?        @map("approved_at")
+  receiptEmailSentAt DateTime?        @map("receipt_email_sent_at")
+  receiptEmailId     String?          @map("receipt_email_id")
+  totalDownloadCount Int              @default(0) @map("total_download_count")
+  refundedAt         DateTime?        @map("refunded_at")
+  refundReason       String?          @map("refund_reason")
+  refundEmailSentAt  DateTime?        @map("refund_email_sent_at")
+  refundEmailId      String?          @map("refund_email_id")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+  product            Product          @relation(fields: [productId], references: [id])
+  downloadGrants     DownloadGrant[]
+  downloadEvents     DownloadEvent[]
+
+  @@index([buyerEmail, createdAt])
+  @@index([status, createdAt])
+  @@map("orders")
+}
+
+// 구매 전 이메일 소유 여부를 확인하기 위한 인증번호와 만료 시각을 보관합니다.
+// 실제 인증번호 대신 해시값을 저장하므로 데이터베이스만으로 번호를 알아낼 수 없습니다.
+model EmailVerification {
+  id                    String    @id @default(uuid()) @db.Uuid
+  email                 String
+  purpose               String
+  codeHash              String    @map("code_hash")
+  verificationTokenHash String?   @map("verification_token_hash")
+  expiresAt             DateTime  @map("expires_at")
+  lastSentAt            DateTime  @map("last_sent_at")
+  attempts              Int       @default(0)
+  verifiedAt            DateTime? @map("verified_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@unique([email, purpose])
+  @@index([expiresAt])
+  @@map("email_verifications")
+}
+
+// 결제한 고객에게 발급하는 기간·횟수 제한 다운로드 권한입니다.
+model DownloadGrant {
+  id             String          @id @default(uuid()) @db.Uuid
+  orderId        String          @map("order_id")
+  tokenHash      String          @unique @map("token_hash")
+  objectKey      String          @map("object_key")
+  expiresAt      DateTime        @map("expires_at")
+  downloadCount  Int             @default(0) @map("download_count")
+  maxDownloads   Int             @default(5) @map("max_downloads")
+  revokedAt      DateTime?       @map("revoked_at")
+  lastDownloadedAt DateTime?     @map("last_downloaded_at")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  events         DownloadEvent[]
+
+  @@index([orderId, createdAt])
+  @@index([expiresAt])
+  @@map("download_grants")
+}
+
+// 언제 어떤 주문이 파일을 받았는지 남기는 보안·고객지원용 기록입니다.
+model DownloadEvent {
+  id          String        @id @default(uuid()) @db.Uuid
+  orderId     String        @map("order_id")
+  grantId     String        @db.Uuid @map("grant_id")
+  ipHash      String?       @map("ip_hash")
+  userAgent   String?       @map("user_agent")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  grant       DownloadGrant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+  @@map("download_events")
+}
+
+// 토스페이먼츠가 보내는 결제 상태 알림을 중복 없이 처리하기 위한 장부입니다.
+model WebhookEvent {
+  id          String    @id
+  eventType   String    @map("event_type")
+  paymentKey  String?   @map("payment_key")
+  payload     Json
+  status      String    @default("received")
+  processedAt DateTime? @map("processed_at")
+  lastError   String?   @map("last_error")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([status, createdAt])
+  @@map("webhook_events")
+}
+
+// 정해진 시간에 다시 처리해야 하는 작업을 잊지 않도록 기록하는 작업 장부입니다.
+model JobLedger {
+  id          String    @id @default(uuid()) @db.Uuid
+  jobKey      String    @unique @map("job_key")
+  jobType     String    @map("job_type")
+  payload     Json
+  status      String    @default("pending")
+  attempts    Int       @default(0)
+  nextRunAt   DateTime  @default(now()) @map("next_run_at")
+  lockedAt    DateTime? @map("locked_at")
+  completedAt DateTime? @map("completed_at")
+  lastError   String?   @map("last_error")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, nextRunAt])
+  @@map("job_ledger")
+}
+
+// 짧은 시간에 같은 요청이 지나치게 반복되는 것을 막기 위한 횟수 기록입니다.
+model RequestLimit {
+  key         String   @id
+  count       Int      @default(0)
+  windowStart DateTime @map("window_start")
+  expiresAt   DateTime @map("expires_at")
+
+  @@index([expiresAt])
+  @@map("request_limits")
+}
+
+// 관리자가 큰 PDF를 끊김 없이 올릴 때 잠시 사용하는 일회성 업로드 허가증입니다.
+model UploadTicket {
+  id        String   @id @default(uuid()) @db.Uuid
+  objectKey String   @unique @map("object_key")
+  expiresAt DateTime @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("upload_tickets")
+}

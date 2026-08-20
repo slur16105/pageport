@@ -1,6 +1,0 @@
-RESEND_API_KEY=re_your_api_key
-EMAIL_VERIFICATION_SECRET=replace_with_a_long_random_secret
-RESEND_FROM_EMAIL=PAGEPORT <onboarding@resend.dev>
-DOWNLOAD_LINK_SECRET=replace_with_a_long_random_secret
-ADMIN_EMAIL=owner@example.com
-ADMIN_SESSION_SECRET=replace_with_a_long_random_secret

@@ -1,0 +1,14 @@
+# pnpm이 설치 과정에서 실행해도 안전하다고 허용한 공식 도구 목록입니다.
+# 악성 패키지가 설치와 동시에 임의 코드를 실행하는 위험을 줄이기 위한 설정입니다.
+allowBuilds:
+  "@prisma/engines": true
+  "@sentry/cli": true
+  esbuild: true
+  prisma: true
+  unrs-resolver: true
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - "@sentry/cli"
+  - esbuild
+  - prisma
+  - unrs-resolver

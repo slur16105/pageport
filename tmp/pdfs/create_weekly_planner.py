@@ -1,3 +1,5 @@
+"""PAGEPORT의 결제·다운로드 시험에 사용할 주간 업무 플래너 샘플 PDF를 만듭니다."""
+
 from pathlib import Path
 
 from reportlab.lib.colors import HexColor
@@ -6,6 +8,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
+# 만들어진 PDF가 언제나 프로젝트의 output/pdf 폴더에 저장되도록 기준 위치를 계산합니다.
 ROOT = Path(__file__).resolve().parents[2]
 OUTPUT = ROOT / "output" / "pdf" / "pageport-weekly-work-planner-sample.pdf"
 OUTPUT.parent.mkdir(parents=True, exist_ok=True)
@@ -26,6 +29,7 @@ c.setAuthor("PAGEPORT")
 
 
 def header(page_label: str):
+    """각 PDF 페이지 위쪽에 같은 로고와 페이지 이름을 그립니다."""
     c.setFillColor(CREAM)
     c.rect(0, 0, width, height, fill=1, stroke=0)
     c.setFillColor(INK)
@@ -41,6 +45,7 @@ def header(page_label: str):
     c.line(42, height - 55, width - 42, height - 55)
 
 
+# 첫 번째 페이지에는 주간 목표와 월요일부터 금요일까지의 일정 칸을 만듭니다.
 header("WEEKLY WORK PLANNER · 01")
 c.setFont("AppleGothic", 10)
 c.setFillColor(HexColor("#496656"))
@@ -100,6 +105,7 @@ c.drawString(42, 42, "시험용 샘플 PDF · 실제 판매 상품이 아닙니�
 c.drawRightString(width - 42, 42, "1 / 2")
 c.showPage()
 
+# 두 번째 페이지에는 한 주를 정리하는 회고 질문과 메모 칸을 만듭니다.
 header("WEEKLY WORK PLANNER · 02")
 c.setFillColor(INK)
 c.setFont("AppleGothic", 25)

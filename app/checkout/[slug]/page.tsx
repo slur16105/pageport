@@ -1,3 +1,4 @@
+// 선택한 상품과 결제 예정 금액을 다시 보여주고 이메일 인증·시험 결제를 시작하는 주문 확인 페이지입니다.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getPublishedProduct } from "../../../lib/catalog-products";
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 type CheckoutPageProps = { params: Promise<{ slug: string }> };
 
 export default async function CheckoutPage({ params }: CheckoutPageProps) {
+  // 공개 판매 중인 상품만 결제할 수 있으며 없는 상품 주소는 404 화면으로 보냅니다.
   const { slug } = await params;
   const product = await getPublishedProduct(slug);
   if (!product) notFound();
@@ -19,18 +21,51 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
   return (
     <main className="checkout-page">
       <header className="site-header detail-header">
-        <a className="brand" href="/" aria-label="페이지포트 홈">PAGEPORT<span>.</span></a>
+        <a className="brand" href="/" aria-label="페이지포트 홈">
+          PAGEPORT<span>.</span>
+        </a>
         <span className="checkout-step">주문 확인</span>
-        <a className="header-button" href={`/products/${product.slug}`}>상품으로 돌아가기</a>
+        <a className="header-button" href={`/products/${product.slug}`}>
+          상품으로 돌아가기
+        </a>
       </header>
       <section className="checkout-shell">
-        <div className="checkout-copy"><p className="eyebrow">마지막 확인 단계</p><h1>주문 내용을<br />확인해 주세요.</h1><p>이메일과 상품 정보를 확인하면 토스페이먼츠 시험 결제수단이 열립니다. 시험용 키만 사용하므로 실제 돈은 결제되지 않습니다.</p></div>
+        {/* 왼쪽은 현재 단계를 설명하고, 오른쪽은 상품 요약과 실제 입력 절차를 보여줍니다. */}
+        <div className="checkout-copy">
+          <p className="eyebrow">마지막 확인 단계</p>
+          <h1>
+            주문 내용을
+            <br />
+            확인해 주세요.
+          </h1>
+          <p>
+            이메일과 상품 정보를 확인하면 토스페이먼츠 시험 결제수단이 열립니다. 시험용 키만 사용하므로 실제 돈은
+            결제되지 않습니다.
+          </p>
+        </div>
         <div className="checkout-card">
           <span className="test-badge">시험용 주문 · 실제 결제 안 됨</span>
-          <div className="checkout-product"><div className={`checkout-cover ${product.accent}`}><b>{product.mark}</b><i>PDF</i></div><div><small>{product.seller}</small><h2>{product.title}</h2><p>PDF {product.pages}쪽 · {product.fileSize}</p></div></div>
-          <div className="checkout-total"><span>결제 예정 금액</span><strong>{product.price}</strong></div>
+          <div className="checkout-product">
+            <div className={`checkout-cover ${product.accent}`}>
+              <b>{product.mark}</b>
+              <i>PDF</i>
+            </div>
+            <div>
+              <small>{product.seller}</small>
+              <h2>{product.title}</h2>
+              <p>
+                PDF {product.pages}쪽 · {product.fileSize}
+              </p>
+            </div>
+          </div>
+          <div className="checkout-total">
+            <span>결제 예정 금액</span>
+            <strong>{product.price}</strong>
+          </div>
           <CheckoutForm slug={product.slug} />
-          <p className="secure-note">카드번호는 PAGEPORT에 저장되지 않으며, 토스페이먼츠의 안전한 화면에서만 처리됩니다.</p>
+          <p className="secure-note">
+            카드번호는 PAGEPORT에 저장되지 않으며, 토스페이먼츠의 안전한 화면에서만 처리됩니다.
+          </p>
         </div>
       </section>
     </main>

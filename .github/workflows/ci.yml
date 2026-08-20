@@ -1,0 +1,50 @@
+# GitHub PR 또는 main 변경 때마다 코드가 안전하게 빌드되는지 자동으로 확인하는 검사표입니다.
+name: PAGEPORT checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    # 외부 서비스에 실제로 접속하지 않고도 빌드할 수 있도록 형식만 맞춘 시험값을 사용합니다.
+    env:
+      DATABASE_URL: postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder
+      DIRECT_URL: postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_example_ci_placeholder_key
+      SUPABASE_SECRET_KEY: sb_secret_example_ci_placeholder_key
+      RESEND_API_KEY: re_example_ci_placeholder
+      RESEND_FROM_EMAIL: PAGEPORT <test@example.com>
+      ADMIN_EMAIL: admin@example.com
+      EMAIL_VERIFICATION_SECRET: ci_email_verification_secret_123456789
+      DOWNLOAD_LINK_SECRET: ci_download_link_secret_1234567890123
+      ADMIN_SESSION_SECRET: ci_admin_session_secret_12345678901234
+      NEXT_PUBLIC_TOSS_TEST_CLIENT_KEY: test_gck_ci_placeholder
+      TOSS_TEST_SECRET_KEY: test_gsk_ci_placeholder
+      TOSS_WEBHOOK_SECRET: ci_webhook_secret_1234567890123456789
+      CRON_SECRET: ci_cron_secret_1234567890123456789012
+    # 설치 → 코드 생성 → 타입·형식·기능·브라우저 검사 순서로 진행합니다.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm exec tsc --noEmit --incremental false
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      - run: pnpm test:e2e
