@@ -2,19 +2,30 @@
 
 회원가입 없이 이메일을 확인하고 PDF 한 상품씩 바로 구매하는 디지털 문서 마켓입니다. 현재는 운영자 상품만 판매하는 1차 출시 범위입니다.
 
+## 배포 주소
+
+- [PAGEPORT 구매자 화면](https://pageport-nu.vercel.app/)
+- [PAGEPORT 관리자 화면](https://pageport-nu.vercel.app/admin)
+- [PAGEPORT 검토자용 사이트 소개](https://pageport-nu.vercel.app/about)
+
+현재 주소는 기능 확인을 위한 시험 운영 배포입니다. 토스페이먼츠는 시험 결제 모드를 유지하고 있으며, 검색엔진 노출도 보류되어 있습니다.
+
 ## 현재 구현
 
 - 8개 샘플 상품, 상품 상세, 이메일 6자리 확인
+- PC·모바일 상품 카테고리 필터와 모바일 3열 상품 목록
 - 서비스 운영 원칙, 구매자·관리자 흐름과 각 화면 입구를 설명하는 소개 페이지
 - Toss Payments 시험 결제·환불과 Webhook V2 수신
 - 구매 완료 화면·구매 이메일·24시간 또는 5회 다운로드 링크
 - 이메일 확인 후 구매 목록 조회와 다운로드 링크 재발급
+- 잘못된 주소·만료·환불 등 접근 불가 상황별 안내 화면
 - Supabase 비공개 PDF, 약 1분 Signed URL, 원자적 다운로드 횟수 기록
 - Resend + React Email 인증·구매·재발급·환불 이메일
 - 관리자 이메일 OTP, 모든 원본 PDF의 TUS 업로드, 주문·다운로드·환불 관리
 - Supabase PostgreSQL, Prisma, SQL Migration, RLS, 다운로드·요청 제한 RPC
 - 요청 제한, 선택형 Turnstile, 보안 헤더, 선택형 Sentry·Analytics
 - 실패 이메일 재처리·만료 자료 정리용 Vercel Cron 작업 장부, GitHub Actions, Dependabot
+- SNS 공유 이미지·메타 정보와 FAQ 구조화 데이터. 검색 노출은 정식 오픈 전까지 비활성화
 
 ## 로컬 실행
 
@@ -59,14 +70,14 @@ pnpm test:e2e
 
 운영 배포는 GitHub Pull Request 검사와 Vercel Preview를 확인한 뒤 사용자가 직접 `main`에 병합하는 방식입니다.
 
-현재 코드는 공개 GitHub 저장소의 `codex/full-rebuild` 브랜치에 있으며, Vercel 시험 배포와 자동검사가 연결되어 있습니다. 실제 운영에는 시험 결제 키를 사용하지 않습니다.
+공개 GitHub 저장소의 `main` 브랜치가 Vercel 운영 주소에 자동 배포됩니다. 각 수정 브랜치는 별도의 Vercel Preview에서 확인하고, 자동검사와 사용자 검토를 통과한 Pull Request만 사용자가 직접 병합합니다. 현재 배포는 기능 확인용이며 실제 운영에는 토스 시험키가 아닌 계약 후 발급받은 운영키를 사용해야 합니다.
 
-## 구축 후 체크리스트
+## 정식 오픈 전 체크리스트
 
-- Vercel Preview 환경변수와 시험 주소 확인
-- 토스 시험 웹훅 주소와 Vercel Cron 실행 확인
-- 필요 시 Turnstile·Sentry·Vercel WAF·Analytics·GA4 연결
-- 실제 도메인·고객지원 이메일 결정과 Resend 발신 도메인 인증
-- 정식 오픈용 토스 계약·라이브 키, 운영 Supabase와 백업·복구 준비
+- 토스페이먼츠 전자결제 계약·심사와 운영키 전환
+- 토스 운영 웹훅 주소와 Vercel Cron 실행 확인
+- 운영용 Supabase 분리 여부와 데이터베이스·PDF 백업 및 복구 절차 확인
+- 실제 도메인·고객지원 이메일 결정과 Resend 발신 도메인 인증 상태 최종 확인
+- Turnstile·Sentry·Vercel WAF·Analytics·GA4 중 실제 사용할 서비스 연결
 - 실제 상품·미리보기와 사업자·법률 정보 확정
 - 정식 오픈 승인 뒤에만 `ENABLE_SEARCH_INDEXING=true`로 변경
