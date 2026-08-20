@@ -189,11 +189,21 @@ test("모바일에서도 메뉴와 상품 3열이 유지된다", async ({ page }
   await expect(page.getByRole("link", { name: "서비스 소개" })).toHaveCount(0);
   await expect(page.getByRole("banner")).toHaveCSS("position", "sticky");
 
-  const browseButtonBox = await page.locator(".hero-actions .primary-button").boundingBox();
-  const trustRowBox = await page.locator(".trust-row").boundingBox();
+  const browseButton = page.locator(".hero-actions .primary-button");
+  const trustRow = page.locator(".trust-row");
+  // 두 요소의 등장 애니메이션 시작 시간이 달라 CI에서는 잠시 높이가 어긋날 수 있으므로 최종 위치를 기다립니다.
+  await expect
+    .poll(async () => {
+      const browseButtonBox = await browseButton.boundingBox();
+      const trustRowBox = await trustRow.boundingBox();
+      if (!browseButtonBox || !trustRowBox) return Number.POSITIVE_INFINITY;
+      return Math.abs(trustRowBox.y - browseButtonBox.y);
+    })
+    .toBeLessThan(2);
+  const browseButtonBox = await browseButton.boundingBox();
+  const trustRowBox = await trustRow.boundingBox();
   if (!browseButtonBox || !trustRowBox) throw new Error("모바일 히어로 안내 영역의 위치를 확인할 수 없습니다.");
   expect(trustRowBox.x).toBeGreaterThan(browseButtonBox.x + browseButtonBox.width);
-  expect(Math.abs(trustRowBox.y - browseButtonBox.y)).toBeLessThan(2);
 
   const columnCount = await page
     .locator(".product-grid")
