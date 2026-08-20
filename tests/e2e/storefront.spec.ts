@@ -60,6 +60,21 @@ test("잘못된 주소에서도 공통 메뉴와 다음 행동을 안내한다",
   await expect(page.getByRole("contentinfo")).toBeVisible();
   await expect(page.getByRole("link", { name: "상품 둘러보기" })).toHaveAttribute("href", "/#products");
 
+  // 공통 컴포넌트를 사용한 헤더·푸터의 배경색이 메인 화면과 실제로 같은지도 비교합니다.
+  const accessHeaderColor = await page
+    .getByRole("banner")
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+  const accessFooterColor = await page
+    .getByRole("contentinfo")
+    .evaluate((element) => getComputedStyle(element).backgroundColor);
+  await page.goto("/");
+  await expect
+    .poll(() => page.getByRole("banner").evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe(accessHeaderColor);
+  await expect
+    .poll(() => page.getByRole("contentinfo").evaluate((element) => getComputedStyle(element).backgroundColor))
+    .toBe(accessFooterColor);
+
   await page.goto("/access/unavailable?reason=session-expired");
   await expect(page.getByRole("heading", { name: "인증 시간이 지나 다시 확인이 필요해요." })).toBeVisible();
   await expect(page.getByRole("link", { name: "다시 인증하기" })).toHaveAttribute("href", "/downloads/reissue");

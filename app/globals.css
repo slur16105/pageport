@@ -40,6 +40,8 @@ button {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--line);
+  /* 페이지의 배경이 무엇이든 공통 헤더는 항상 같은 크림색으로 보이게 합니다. */
+  background: var(--cream);
 }
 .brand {
   font-size: 23px;
@@ -1666,9 +1668,6 @@ footer small {
   min-height: 100vh;
   background: #e8dfd1;
 }
-.reissue-page .site-header {
-  background: #fffaf0;
-}
 .reissue-header {
   height: 76px;
   display: flex;
@@ -2499,9 +2498,6 @@ footer small {
   font-weight: 800;
 }
 @media (max-width: 760px) {
-  .access-page .site-header nav {
-    display: none;
-  }
   .access-shell {
     grid-template-columns: 1fr;
     gap: 50px;
