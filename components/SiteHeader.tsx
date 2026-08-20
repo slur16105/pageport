@@ -8,13 +8,12 @@ export function SiteHeader() {
         PAGEPORT<span>.</span>
       </Link>
       <nav aria-label="주요 메뉴">
-        <Link href="/about">PAGEPORT 소개</Link>
         <Link href="/#products">PDF 둘러보기</Link>
         <Link href="/#guide">구매 방법</Link>
         <Link href="/#faq">자주 묻는 질문</Link>
       </nav>
-      <Link className="header-button" href="/downloads/reissue">
-        구매 파일 다시 받기
+      <Link className="header-button" href="/downloads/reissue" aria-label="구매한 PDF 파일 다시 받기">
+        파일 다시 받기
       </Link>
     </header>
   );

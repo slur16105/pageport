@@ -81,10 +81,8 @@ test("잘못된 주소에서도 공통 메뉴와 다음 행동을 안내한다",
 });
 
 test("서비스 소개에서 구매자와 관리자 흐름으로 이동할 수 있다", async ({ page }) => {
-  // 사이트 자체의 운영 원칙을 읽고 각 이용자에게 필요한 화면으로 바로 갈 수 있는지 확인합니다.
-  await page.goto("/");
-  // 모바일에서는 상단 메뉴가 간결하게 숨겨지므로 모든 화면에서 보이는 푸터의 소개 링크를 사용합니다.
-  await page.getByRole("link", { name: "서비스 소개" }).click();
+  // 소개 화면은 일반 구매 메뉴에 노출하지 않지만, 검토자가 주소로 직접 열면 구매자·관리자 흐름을 확인할 수 있습니다.
+  await page.goto("/about");
   await expect(page).toHaveURL(/\/about/);
   await expect(page.getByRole("heading", { name: /계정은 가볍게/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "구매와 운영은 이렇게 이어집니다." })).toBeVisible();
@@ -94,4 +92,20 @@ test("서비스 소개에서 구매자와 관리자 흐름으로 이동할 수 �
     "/downloads/reissue",
   );
   await expect(page.getByRole("link", { name: "관리자 화면 열기" })).toHaveAttribute("href", "/admin");
+});
+
+test("모바일에서도 메뉴와 상품 3열이 유지된다", async ({ page }, testInfo) => {
+  // 휴대전화 전용 프로젝트에서만 실행해, 메뉴가 사라지거나 상품이 한 줄로 늘어지는 회귀를 막습니다.
+  test.skip(testInfo.project.name !== "mobile-webkit", "모바일 화면 전용 확인입니다.");
+  await page.goto("/");
+
+  await expect(page.getByRole("navigation", { name: "주요 메뉴" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "구매한 PDF 파일 다시 받기" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "PAGEPORT 소개" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "서비스 소개" })).toHaveCount(0);
+
+  const columnCount = await page
+    .locator(".product-grid")
+    .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
+  expect(columnCount).toBe(3);
 });
