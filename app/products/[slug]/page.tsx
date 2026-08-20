@@ -1,6 +1,7 @@
 // 주소의 영문 상품명(slug)에 맞는 상품을 찾아 상세 정보와 구매 시작 화면을 보여주는 페이지입니다.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { StructuredData } from "../../../components/StructuredData";
 import { getPublishedProduct } from "../../../lib/catalog-products";
 import { PurchaseForm } from "./PurchaseForm";
 
@@ -11,13 +12,23 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   const { slug } = await params;
   const product = await getPublishedProduct(slug);
   if (!product) return {};
-  const title = `${product.title} | PAGEPORT`;
+  // 브라우저 제목에는 최상위 레이아웃이 자동으로 “| PAGEPORT”를 붙이므로 상품명만 전달합니다.
+  const title = product.title;
+  const socialTitle = `${product.title} | PAGEPORT`;
   const description = `${product.seller}의 ${product.description}. ${product.price}`;
   return {
     title,
     description,
-    openGraph: { title, description, images: [] },
-    twitter: { card: "summary", title, description, images: [] },
+    alternates: { canonical: `/products/${product.slug}` },
+    openGraph: {
+      title: socialTitle,
+      description,
+      type: "website",
+      locale: "ko_KR",
+      siteName: "PAGEPORT",
+      url: `/products/${product.slug}`,
+    },
+    twitter: { card: "summary_large_image", title: socialTitle, description },
   };
 }
 
@@ -26,9 +37,45 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
   const product = await getPublishedProduct(slug);
   if (!product) notFound();
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const productUrl = `${appUrl}/products/${product.slug}`;
+  const numericPrice = product.price.replace(/[^0-9]/g, "");
 
   return (
     <main>
+      {/* 화면의 상품 정보와 같은 내용을 기계용 상품·가격·경로 정보로도 제공합니다. */}
+      <StructuredData
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.title,
+            description: product.summary,
+            category: product.category,
+            sku: product.slug,
+            image: [`${productUrl}/opengraph-image`],
+            brand: { "@type": "Brand", name: "PAGEPORT" },
+            offers: {
+              "@type": "Offer",
+              url: productUrl,
+              priceCurrency: "KRW",
+              price: numericPrice,
+              availability: "https://schema.org/InStock",
+              itemCondition: "https://schema.org/NewCondition",
+              seller: { "@type": "Organization", name: product.seller },
+            },
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: "PAGEPORT", item: appUrl },
+              { "@type": "ListItem", position: 2, name: product.category, item: `${appUrl}/#products` },
+              { "@type": "ListItem", position: 3, name: product.title, item: productUrl },
+            ],
+          },
+        ]}
+      />
       {/* 상세 화면에서 상품 목록·구매 안내·내 구매함으로 이동하는 상단 메뉴입니다. */}
       <header className="site-header detail-header">
         <a className="brand" href="/" aria-label="페이지포트 홈">
