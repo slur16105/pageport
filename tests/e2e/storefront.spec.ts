@@ -79,3 +79,19 @@ test("잘못된 주소에서도 공통 메뉴와 다음 행동을 안내한다",
   await expect(page.getByRole("heading", { name: "인증 시간이 지나 다시 확인이 필요해요." })).toBeVisible();
   await expect(page.getByRole("link", { name: "다시 인증하기" })).toHaveAttribute("href", "/downloads/reissue");
 });
+
+test("서비스 소개에서 구매자와 관리자 흐름으로 이동할 수 있다", async ({ page }) => {
+  // 사이트 자체의 운영 원칙을 읽고 각 이용자에게 필요한 화면으로 바로 갈 수 있는지 확인합니다.
+  await page.goto("/");
+  // 모바일에서는 상단 메뉴가 간결하게 숨겨지므로 모든 화면에서 보이는 푸터의 소개 링크를 사용합니다.
+  await page.getByRole("link", { name: "서비스 소개" }).click();
+  await expect(page).toHaveURL(/\/about/);
+  await expect(page.getByRole("heading", { name: /계정은 가볍게/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "구매와 운영은 이렇게 이어집니다." })).toBeVisible();
+  await expect(page.getByRole("link", { name: "PDF 상품 보기" })).toHaveAttribute("href", "/#products");
+  await expect(page.getByRole("link", { name: "구매 파일 다시 받기", exact: true }).last()).toHaveAttribute(
+    "href",
+    "/downloads/reissue",
+  );
+  await expect(page.getByRole("link", { name: "관리자 화면 열기" })).toHaveAttribute("href", "/admin");
+});

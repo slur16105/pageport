@@ -801,10 +801,11 @@ footer {
 }
 footer p {
   color: #bfc7c2;
+  text-align: right;
 }
 footer div {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 24px;
   font-size: 13px;
   font-weight: 700;
@@ -879,6 +880,9 @@ footer small {
   footer {
     grid-template-columns: 1fr;
     padding: 45px 22px;
+  }
+  footer p {
+    text-align: left;
   }
   footer div {
     justify-content: flex-start;
@@ -2524,6 +2528,321 @@ footer small {
   .access-actions {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+/* PAGEPORT의 운영 원칙과 구매자·관리자 흐름을 소개하는 서비스 안내 페이지입니다. */
+.about-page {
+  min-height: 100vh;
+  background: var(--cream);
+}
+.about-hero {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  min-height: 640px;
+  border-bottom: 1px solid var(--ink);
+}
+.about-hero-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 90px 6vw;
+}
+.about-hero-copy h1 {
+  max-width: 850px;
+  font-size: clamp(58px, 6.7vw, 100px);
+}
+.about-hero-copy > p:last-child {
+  max-width: 670px;
+  margin: 34px 0 0;
+  color: #526058;
+  font-size: 18px;
+  line-height: 1.8;
+  word-break: keep-all;
+}
+.about-principle-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 70px 6vw;
+  border-left: 1px solid var(--ink);
+  background: var(--green);
+}
+.about-principle-card > span,
+.about-entrance-card > span {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+}
+.about-principle-card > strong {
+  margin: 28px 0 18px;
+  font:
+    500 clamp(48px, 6vw, 78px)/0.92 Georgia,
+    serif;
+  letter-spacing: -0.06em;
+}
+.about-principle-card > p {
+  max-width: 460px;
+  margin: 0 0 38px;
+  color: #435048;
+  line-height: 1.7;
+}
+.about-principle-card > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px 0;
+  border-top: 1px solid rgba(23, 35, 29, 0.34);
+}
+.about-principle-card small {
+  color: #526058;
+}
+.about-principle-card b {
+  text-align: right;
+}
+.about-entrances,
+.about-process,
+.about-status {
+  padding: 100px 6vw 110px;
+}
+.about-section-title {
+  max-width: 820px;
+  margin-bottom: 52px;
+}
+.about-section-title h2,
+.about-data h2,
+.about-status h2 {
+  margin: 0;
+  font:
+    500 clamp(40px, 5vw, 68px)/1.04 Georgia,
+    serif;
+  letter-spacing: -0.055em;
+  word-break: keep-all;
+}
+.about-section-title > p:last-child {
+  margin: 24px 0 0;
+  color: #59665f;
+  line-height: 1.8;
+  word-break: keep-all;
+}
+.about-entrance-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--ink);
+  box-shadow: 14px 14px 0 rgba(23, 35, 29, 0.14);
+}
+.about-entrance-card {
+  min-height: 340px;
+  padding: 42px;
+}
+.about-entrance-card + .about-entrance-card {
+  border-left: 1px solid var(--ink);
+}
+.about-entrance-card.buyer {
+  background: #f2cf58;
+}
+.about-entrance-card.admin {
+  background: var(--ink);
+  color: #fffdf7;
+}
+.about-entrance-card h3 {
+  margin: 46px 0 14px;
+  font:
+    500 42px/1 Georgia,
+    serif;
+  letter-spacing: -0.045em;
+}
+.about-entrance-card p {
+  max-width: 580px;
+  min-height: 54px;
+  color: inherit;
+  line-height: 1.7;
+}
+.about-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 34px;
+}
+.about-entrance-card.admin .primary-button.light {
+  background: #fffdf7;
+}
+.about-process {
+  border-top: 1px solid var(--ink);
+  background: #e8dfd1;
+}
+.about-process-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--ink);
+  background: #fffaf0;
+}
+.about-process-column + .about-process-column {
+  border-left: 1px solid var(--ink);
+}
+.about-process-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--ink);
+  background: var(--green);
+}
+.about-process-column.admin-flow .about-process-heading {
+  background: #f5a0a4;
+}
+.about-process-heading span {
+  font-size: 24px;
+  font-weight: 900;
+}
+.about-process-heading b {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+.about-process-column ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.about-process-column li {
+  display: grid;
+  grid-template-columns: 52px 1fr;
+  gap: 18px;
+  padding: 25px 28px;
+}
+.about-process-column li + li {
+  border-top: 1px solid var(--line);
+}
+.about-process-column li > b {
+  color: var(--orange);
+  font:
+    500 25px/1 Georgia,
+    serif;
+}
+.about-process-column h3 {
+  margin: 0 0 7px;
+  font-size: 18px;
+}
+.about-process-column p {
+  margin: 0;
+  color: #5c685f;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.about-data {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 8vw;
+  padding: 105px 6vw;
+  border-top: 1px solid var(--ink);
+  background: var(--green);
+}
+.about-data-copy > p:not(.eyebrow) {
+  max-width: 650px;
+  margin: 28px 0;
+  color: #46534c;
+  line-height: 1.8;
+  word-break: keep-all;
+}
+.about-data-grid {
+  border-top: 1px solid var(--ink);
+}
+.about-data-grid > div {
+  display: grid;
+  grid-template-columns: 45px 0.8fr 1.2fr;
+  gap: 18px;
+  align-items: start;
+  padding: 24px 0;
+  border-bottom: 1px solid rgba(23, 35, 29, 0.4);
+}
+.about-data-grid span {
+  color: #6a776f;
+  font:
+    500 20px/1 Georgia,
+    serif;
+}
+.about-data-grid p {
+  margin: 0;
+  color: #46534c;
+  font-size: 14px;
+  line-height: 1.65;
+}
+.about-status {
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 8vw;
+  border-top: 1px solid var(--ink);
+}
+.about-status ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--ink);
+}
+.about-status li {
+  padding: 20px 0 20px 32px;
+  border-bottom: 1px solid var(--line);
+  line-height: 1.7;
+  position: relative;
+}
+.about-status li::before {
+  position: absolute;
+  left: 2px;
+  content: "✓";
+  color: var(--orange);
+  font-weight: 900;
+}
+@media (max-width: 900px) {
+  .about-hero,
+  .about-data,
+  .about-status {
+    grid-template-columns: 1fr;
+  }
+  .about-principle-card {
+    border-top: 1px solid var(--ink);
+    border-left: 0;
+  }
+  .about-process-grid {
+    grid-template-columns: 1fr;
+  }
+  .about-process-column + .about-process-column {
+    border-top: 1px solid var(--ink);
+    border-left: 0;
+  }
+}
+@media (max-width: 660px) {
+  .about-hero-copy,
+  .about-principle-card,
+  .about-entrances,
+  .about-process,
+  .about-data,
+  .about-status {
+    padding: 68px 22px;
+  }
+  .about-hero-copy h1 {
+    font-size: 52px;
+  }
+  .about-entrance-grid {
+    grid-template-columns: 1fr;
+    box-shadow: 8px 8px 0 rgba(23, 35, 29, 0.14);
+  }
+  .about-entrance-card {
+    min-height: 0;
+    padding: 30px 24px;
+  }
+  .about-entrance-card + .about-entrance-card {
+    border-top: 1px solid var(--ink);
+    border-left: 0;
+  }
+  .about-card-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .about-data-grid > div {
+    grid-template-columns: 38px 1fr;
+  }
+  .about-data-grid p {
+    grid-column: 2;
   }
 }
 .order-summary {

@@ -9,6 +9,7 @@ export function SiteFooter() {
       </Link>
       <p>전문 지식이 오가는 디지털 문서 마켓</p>
       <div>
+        <Link href="/about">서비스 소개</Link>
         <Link href="/terms">이용약관</Link>
         <Link href="/privacy">개인정보처리방침</Link>
         <Link href="/refund-policy">환불 안내</Link>
