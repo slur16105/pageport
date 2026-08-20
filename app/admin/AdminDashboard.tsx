@@ -135,7 +135,8 @@ async function uploadPdf(file: File, onProgress: (percent: number) => void) {
       endpoint,
       retryDelays: [0, 1000, 3000, 5000],
       // TUS가 요구하는 anon JWT로 인증하고, 실제 저장 위치는 일회용 업로드 허가증과 RLS가 제한합니다.
-      headers: { authorization: `Bearer ${authorization}`, "x-upsert": "true" },
+      // 매번 새 UUID 경로를 쓰므로 기존 파일 덮어쓰기 권한은 요청하지 않습니다.
+      headers: { authorization: `Bearer ${authorization}` },
       metadata: { bucketName, objectName: objectKey, contentType: "application/pdf", cacheControl: "3600" },
       uploadSize: file.size,
       removeFingerprintOnSuccess: true,
