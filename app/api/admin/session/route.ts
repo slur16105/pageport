@@ -17,9 +17,14 @@ export async function POST(request: Request) {
     }
     const session = await createAdminSession();
     const secure = new URL(request.url).protocol === "https:" ? "; Secure" : "";
-    return Response.json({ authenticated: true }, {
-      headers: { "Set-Cookie": `${ADMIN_COOKIE}=${session.token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200${secure}` },
-    });
+    return Response.json(
+      { authenticated: true },
+      {
+        headers: {
+          "Set-Cookie": `${ADMIN_COOKIE}=${session.token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=43200${secure}`,
+        },
+      },
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : "관리자 로그인 중 문제가 발생했습니다.";
     return Response.json({ error: message }, { status: 500 });
@@ -27,7 +32,10 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE() {
-  return Response.json({ authenticated: false }, {
-    headers: { "Set-Cookie": `${ADMIN_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0` },
-  });
+  return Response.json(
+    { authenticated: false },
+    {
+      headers: { "Set-Cookie": `${ADMIN_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0` },
+    },
+  );
 }

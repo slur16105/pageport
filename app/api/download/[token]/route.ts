@@ -1,70 +1,55 @@
-import { and, eq, lt, sql } from "drizzle-orm";
-import { getDb, getFiles } from "../../../../db";
-import { ensureDownloadGrantsSchema } from "../../../../db/ensure-download-grants";
-import { ensureOrdersSchema } from "../../../../db/ensure-orders";
-import { downloadGrants, orders } from "../../../../db/schema";
-import { verifyDownloadToken } from "../../../../lib/download-links";
+import { Prisma } from "@prisma/client";
+import { hashDownloadToken } from "../../../../lib/download-links";
+import { prisma } from "../../../../lib/prisma";
+import { privacyHash, requestIp } from "../../../../lib/request-security";
+import { PRIVATE_PDF_BUCKET, supabaseAdmin } from "../../../../lib/supabase";
 
 type Props = { params: Promise<{ token: string }> };
-const MAX_DOWNLOADS_PER_LINK = 5;
 
 function downloadError(request: Request, reason: string, message: string, status: number) {
   if (request.headers.get("accept")?.includes("text/html")) {
     const url = new URL("/downloads/unavailable", request.url);
     url.searchParams.set("reason", reason);
-    return new Response(null, { status: 303, headers: { Location: url.toString(), "Cache-Control": "private, no-store" } });
+    return new Response(null, {
+      status: 303,
+      headers: { Location: url.toString(), "Cache-Control": "private, no-store" },
+    });
   }
   return Response.json({ error: message }, { status });
 }
 
-function downloadLimitResponse(request: Request) {
-  return downloadError(request, "limit", "이 다운로드 주소는 5회 사용되어 닫혔습니다. 구매 이메일을 인증해 새 주소를 받아 주세요.", 410);
-}
-
 export async function GET(request: Request, { params }: Props) {
   try {
-    const { token } = await params;
-    const verified = await verifyDownloadToken(decodeURIComponent(token));
-    if (!verified) return downloadError(request, "expired", "다운로드 주소가 만료되었거나 올바르지 않습니다.", 410);
-
-    await Promise.all([ensureDownloadGrantsSchema(), ensureOrdersSchema()]);
-    const db = getDb();
-    const [record] = await db.select({ grant: downloadGrants, orderStatus: orders.status }).from(downloadGrants)
-      .innerJoin(orders, eq(downloadGrants.orderId, orders.id))
-      .where(and(eq(downloadGrants.orderId, verified.orderId), eq(downloadGrants.expiresAt, verified.expiresAt)))
-      .limit(1);
-    if (!record || !["paid", "test_paid"].includes(record.orderStatus)) {
-      return downloadError(request, record?.orderStatus === "refunded" ? "refunded" : "unavailable", "결제 완료 주문을 확인할 수 없습니다.", 403);
-    }
-    if (record.grant.downloadCount >= MAX_DOWNLOADS_PER_LINK) return downloadLimitResponse(request);
-
-    const object = await getFiles().get(record.grant.objectKey);
-    if (!object) return downloadError(request, "missing", "PDF 파일을 찾을 수 없습니다.", 404);
-
-    const reserved = await db.update(downloadGrants).set({
-      downloadCount: sql`${downloadGrants.downloadCount} + 1`,
-      lastDownloadedAt: Date.now(),
-    }).where(and(
-      eq(downloadGrants.orderId, record.grant.orderId),
-      lt(downloadGrants.downloadCount, MAX_DOWNLOADS_PER_LINK),
-    )).returning({ orderId: downloadGrants.orderId });
-    if (reserved.length === 0) return downloadLimitResponse(request);
-    await db.update(orders).set({
-      totalDownloadCount: sql`${orders.totalDownloadCount} + 1`,
-    }).where(eq(orders.id, record.grant.orderId));
-
-    const filename = `${record.grant.productSlug}.pdf`;
-    return new Response(object.body, {
-      headers: {
-        "Content-Type": object.httpMetadata?.contentType || "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "Cache-Control": "private, no-store",
-        "X-Content-Type-Options": "nosniff",
-        ...(object.size ? { "Content-Length": String(object.size) } : {}),
-      },
+    const token = decodeURIComponent((await params).token);
+    const result = await prisma.$queryRaw<
+      Array<{ object_key: string; order_id: string; download_count: number }>
+    >(Prisma.sql`
+      SELECT * FROM public.consume_download_grant(${hashDownloadToken(token)}, ${privacyHash(requestIp(request))}, ${request.headers.get("user-agent")})
+    `);
+    const record = result[0];
+    if (!record) return downloadError(request, "unavailable", "다운로드 권한을 확인할 수 없습니다.", 403);
+    const { data, error } = await supabaseAdmin()
+      .storage.from(PRIVATE_PDF_BUCKET)
+      .createSignedUrl(record.object_key, 60, { download: record.object_key.split("/").at(-1) ?? "pageport.pdf" });
+    if (error || !data?.signedUrl) return downloadError(request, "missing", "PDF 파일을 찾을 수 없습니다.", 404);
+    return new Response(null, {
+      status: 303,
+      headers: { Location: data.signedUrl, "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "PDF 다운로드 중 문제가 발생했습니다.";
-    return downloadError(request, "unavailable", message, 500);
+    const reason = /REFUNDED|REVOKED|ORDER_UNAVAILABLE/.test(message)
+      ? "refunded"
+      : /EXPIRED/.test(message)
+        ? "expired"
+        : /LIMIT/.test(message)
+          ? "limit"
+          : "unavailable";
+    return downloadError(
+      request,
+      reason,
+      "다운로드 주소가 만료되었거나 사용할 수 없습니다.",
+      reason === "unavailable" ? 403 : 410,
+    );
   }
 }

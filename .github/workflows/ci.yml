@@ -1,0 +1,46 @@
+name: PAGEPORT checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder
+      DIRECT_URL: postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder
+      NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_example_ci_placeholder_key
+      SUPABASE_SECRET_KEY: sb_secret_example_ci_placeholder_key
+      RESEND_API_KEY: re_example_ci_placeholder
+      RESEND_FROM_EMAIL: PAGEPORT <test@example.com>
+      ADMIN_EMAIL: admin@example.com
+      EMAIL_VERIFICATION_SECRET: ci_email_verification_secret_123456789
+      DOWNLOAD_LINK_SECRET: ci_download_link_secret_1234567890123
+      ADMIN_SESSION_SECRET: ci_admin_session_secret_12345678901234
+      NEXT_PUBLIC_TOSS_TEST_CLIENT_KEY: test_gck_ci_placeholder
+      TOSS_TEST_SECRET_KEY: test_gsk_ci_placeholder
+      TOSS_WEBHOOK_SECRET: ci_webhook_secret_1234567890123456789
+      CRON_SECRET: ci_cron_secret_1234567890123456789012
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      - run: pnpm test:e2e

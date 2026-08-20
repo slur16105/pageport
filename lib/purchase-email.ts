@@ -1,5 +1,5 @@
-import { env } from "cloudflare:workers";
 import { purchaseCompleteEmail } from "../emails/purchase-complete";
+import { env } from "./env";
 
 type PurchaseEmailInput = {
   buyerEmail: string;
@@ -12,11 +12,11 @@ type PurchaseEmailInput = {
 };
 
 export async function sendPurchaseCompleteEmail(input: PurchaseEmailInput) {
-  const runtimeEnv = env as unknown as Record<string, string | undefined>;
+  const runtimeEnv = env();
   const apiKey = runtimeEnv.RESEND_API_KEY;
   if (!apiKey?.startsWith("re_")) throw new Error("Resend 이메일 발송 설정이 필요합니다.");
 
-  const template = purchaseCompleteEmail(input);
+  const template = await purchaseCompleteEmail(input);
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -32,7 +32,7 @@ export async function sendPurchaseCompleteEmail(input: PurchaseEmailInput) {
       html: template.html,
     }),
   });
-  const result = await response.json() as { id?: string; message?: string };
+  const result = (await response.json()) as { id?: string; message?: string };
   if (!response.ok || !result.id) throw new Error(result.message ?? "구매 완료 이메일을 보내지 못했습니다.");
   return result.id;
 }

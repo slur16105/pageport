@@ -2,8 +2,9 @@
 
 import { ANONYMOUS, loadTossPayments, type TossPaymentsWidgets } from "@tosspayments/tosspayments-sdk";
 import { useEffect, useRef, useState } from "react";
+import { TurnstileWidget } from "../../../components/TurnstileWidget";
 
-const TOSS_TEST_CLIENT_KEY = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm";
+const TOSS_TEST_CLIENT_KEY = process.env.NEXT_PUBLIC_TOSS_TEST_CLIENT_KEY ?? "";
 
 type TestOrder = {
   id: string;
@@ -25,6 +26,7 @@ export function CheckoutForm({ slug }: { slug: string }) {
   const [order, setOrder] = useState<TestOrder | null>(null);
   const [paymentReady, setPaymentReady] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
   const widgetsRef = useRef<TossPaymentsWidgets | null>(null);
 
   useEffect(() => {
@@ -54,7 +56,9 @@ export function CheckoutForm({ slug }: { slug: string }) {
     }
 
     preparePayment();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [order]);
 
   const typoDomains: Record<string, string> = {
@@ -64,9 +68,7 @@ export function CheckoutForm({ slug }: { slug: string }) {
     "hanmail.con": "hanmail.net",
   };
   const [localPart, domain = ""] = email.split("@");
-  const suggestedEmail = typoDomains[domain.toLowerCase()]
-    ? `${localPart}@${typoDomains[domain.toLowerCase()]}`
-    : "";
+  const suggestedEmail = typoDomains[domain.toLowerCase()] ? `${localPart}@${typoDomains[domain.toLowerCase()]}` : "";
 
   function updateEmail(value: string) {
     setEmail(value);
@@ -91,9 +93,9 @@ export function CheckoutForm({ slug }: { slug: string }) {
       const response = await fetch("/api/email/send-code", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, purpose: "checkout", turnstileToken: turnstileToken || undefined }),
       });
-      const result = await response.json() as { error?: string };
+      const result = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(result.error ?? "인증번호를 보내지 못했습니다.");
       setVerificationSent(true);
       setMessage("인증번호를 이메일로 보냈습니다. 10분 안에 입력해 주세요.");
@@ -116,7 +118,7 @@ export function CheckoutForm({ slug }: { slug: string }) {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ email, code }),
       });
-      const result = await response.json() as { verificationToken?: string; error?: string };
+      const result = (await response.json()) as { verificationToken?: string; error?: string };
       if (!response.ok || !result.verificationToken) throw new Error(result.error ?? "이메일을 확인하지 못했습니다.");
       setEmailVerificationToken(result.verificationToken);
       setEmailVerified(true);
@@ -166,30 +168,99 @@ export function CheckoutForm({ slug }: { slug: string }) {
       });
     } catch (error) {
       const paymentError = error as { code?: string; message?: string };
-      setMessage(paymentError.code === "USER_CANCEL" ? "결제를 취소했습니다. 다시 시도할 수 있습니다." : paymentError.message ?? "결제창을 열지 못했습니다.");
+      setMessage(
+        paymentError.code === "USER_CANCEL"
+          ? "결제를 취소했습니다. 다시 시도할 수 있습니다."
+          : (paymentError.message ?? "결제창을 열지 못했습니다."),
+      );
       setBusy(false);
     }
   }
 
   return (
     <div className="checkout-form">
-      {!order && <>
-        <label className="email-field"><span>구매 이메일</span><div className="email-verify-row"><input value={email} onChange={(event) => updateEmail(event.target.value)} type="email" placeholder="name@example.com" autoComplete="email" required disabled={emailVerified} /><button type="button" disabled={busy} onClick={emailVerified ? () => updateEmail(email) : sendVerificationCode}>{emailVerified ? "이메일 수정" : verificationSent ? "다시 보내기" : "인증번호 받기"}</button></div><small>영수증과 다운로드 주소를 이 이메일로 보내드립니다.</small></label>
-        {suggestedEmail && !emailVerified && <button className="email-suggestion" type="button" onClick={() => updateEmail(suggestedEmail)}>{suggestedEmail}을 입력하려고 하셨나요?</button>}
-        {verificationSent && !emailVerified && <div className="code-row"><input value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" placeholder="6자리 인증번호" aria-label="6자리 이메일 인증번호" /><button type="button" disabled={busy} onClick={verifyCode}>확인</button></div>}
-        {emailVerified && <p className="verified-email">✓ 이메일 확인 완료</p>}
-        <label className="check-row"><input checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} type="checkbox" /><span>상품명, 가격, 이메일을 확인했습니다.</span></label>
-        <label className="check-row"><input checked={refundAcknowledged} onChange={(event) => setRefundAcknowledged(event.target.checked)} type="checkbox" /><span>다운로드 후에는 파일 오류나 설명 불일치 시에만 환불을 검토한다는 안내를 확인했습니다.</span></label>
-        <button className="buy-button" type="button" onClick={createTestOrder} disabled={busy}>{busy ? "준비 중…" : "시험 결제수단 열기"}</button>
-      </>}
-      {order && <div className="toss-payment-area">
-        <p className="order-number">시험 주문번호 <b>{order.id}</b></p>
-        <div id="payment-method" />
-        <div id="payment-agreement" />
-        <button className="buy-button" type="button" onClick={requestTestPayment} disabled={!paymentReady || busy}>{paymentReady ? "토스로 시험 결제하기" : "결제 화면 불러오는 중…"}</button>
-        <button className="payment-back" type="button" onClick={() => window.location.reload()}>주문 정보 다시 입력</button>
-      </div>}
-      {message && <p className="checkout-message" role="status">{message}</p>}
+      {!order && (
+        <>
+          <label className="email-field">
+            <span>구매 이메일</span>
+            <div className="email-verify-row">
+              <input
+                value={email}
+                onChange={(event) => updateEmail(event.target.value)}
+                type="email"
+                placeholder="name@example.com"
+                autoComplete="email"
+                required
+                disabled={emailVerified}
+              />
+              <button
+                type="button"
+                disabled={busy}
+                onClick={emailVerified ? () => updateEmail(email) : sendVerificationCode}
+              >
+                {emailVerified ? "이메일 수정" : verificationSent ? "다시 보내기" : "인증번호 받기"}
+              </button>
+            </div>
+            <small>영수증과 다운로드 주소를 이 이메일로 보내드립니다.</small>
+          </label>
+          {suggestedEmail && !emailVerified && (
+            <button className="email-suggestion" type="button" onClick={() => updateEmail(suggestedEmail)}>
+              {suggestedEmail}을 입력하려고 하셨나요?
+            </button>
+          )}
+          <TurnstileWidget onToken={setTurnstileToken} />
+          {verificationSent && !emailVerified && (
+            <div className="code-row">
+              <input
+                value={code}
+                onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                inputMode="numeric"
+                placeholder="6자리 인증번호"
+                aria-label="6자리 이메일 인증번호"
+              />
+              <button type="button" disabled={busy} onClick={verifyCode}>
+                확인
+              </button>
+            </div>
+          )}
+          {emailVerified && <p className="verified-email">✓ 이메일 확인 완료</p>}
+          <label className="check-row">
+            <input checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} type="checkbox" />
+            <span>상품명, 가격, 이메일을 확인했습니다.</span>
+          </label>
+          <label className="check-row">
+            <input
+              checked={refundAcknowledged}
+              onChange={(event) => setRefundAcknowledged(event.target.checked)}
+              type="checkbox"
+            />
+            <span>다운로드 후에는 파일 오류나 설명 불일치 시에만 환불을 검토한다는 안내를 확인했습니다.</span>
+          </label>
+          <button className="buy-button" type="button" onClick={createTestOrder} disabled={busy}>
+            {busy ? "준비 중…" : "시험 결제수단 열기"}
+          </button>
+        </>
+      )}
+      {order && (
+        <div className="toss-payment-area">
+          <p className="order-number">
+            시험 주문번호 <b>{order.id}</b>
+          </p>
+          <div id="payment-method" />
+          <div id="payment-agreement" />
+          <button className="buy-button" type="button" onClick={requestTestPayment} disabled={!paymentReady || busy}>
+            {paymentReady ? "토스로 시험 결제하기" : "결제 화면 불러오는 중…"}
+          </button>
+          <button className="payment-back" type="button" onClick={() => window.location.reload()}>
+            주문 정보 다시 입력
+          </button>
+        </div>
+      )}
+      {message && (
+        <p className="checkout-message" role="status">
+          {message}
+        </p>
+      )}
     </div>
   );
 }

@@ -1,34 +1,27 @@
-import { and, eq, inArray } from "drizzle-orm";
-import { getDb } from "../../../../db";
-import { ensureOrdersSchema } from "../../../../db/ensure-orders";
-import { orders } from "../../../../db/schema";
-import { createDownloadGrant, downloadUrl, verifyDownloadToken } from "../../../../lib/download-links";
+import { z } from "zod";
+import { createDownloadGrant, downloadUrl } from "../../../../lib/download-links";
 import { sendDownloadRenewalEmail } from "../../../../lib/download-renewal-email";
 import { consumeEmailToken } from "../../../../lib/email-verification";
+import { prisma } from "../../../../lib/prisma";
+
+const schema = z.object({ orderId: z.string().min(1), email: z.email(), emailVerificationToken: z.string().uuid() });
 
 export async function POST(request: Request) {
   try {
-    const payload = (await request.json()) as { orderId?: string; email?: string; emailVerificationToken?: string };
-    const orderId = payload.orderId?.trim() ?? "";
-    const email = payload.email?.trim().toLowerCase() ?? "";
-    if (!orderId || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !payload.emailVerificationToken) {
-      return Response.json({ error: "주문번호와 이메일 인증 정보를 확인해 주세요." }, { status: 400 });
-    }
-
-    await ensureOrdersSchema();
-    const [order] = await getDb().select().from(orders).where(and(
-      eq(orders.id, orderId),
-      eq(orders.buyerEmail, email),
-      inArray(orders.status, ["paid", "test_paid"]),
-    )).limit(1);
+    const input = schema.parse(await request.json());
+    const email = input.email.trim().toLowerCase();
+    const order = await prisma.order.findFirst({
+      where: { id: input.orderId.trim(), buyerEmail: email, status: { in: ["paid", "test_paid"] } },
+    });
     if (!order) return Response.json({ error: "해당 이메일의 결제 완료 주문을 찾을 수 없습니다." }, { status: 404 });
-    if (!(await consumeEmailToken(email, payload.emailVerificationToken))) {
-      return Response.json({ error: "이메일 인증이 만료되었거나 이미 사용되었습니다. 새 인증번호를 받아 주세요." }, { status: 403 });
-    }
+    if (!(await consumeEmailToken(email, input.emailVerificationToken)))
+      return Response.json(
+        { error: "이메일 인증이 만료되었거나 이미 사용되었습니다. 새 인증번호를 받아 주세요." },
+        { status: 403 },
+      );
 
-    const token = await createDownloadGrant(order.id, order.productSlug);
-    const url = downloadUrl(request, token);
-    const verified = await verifyDownloadToken(token);
+    const grant = await createDownloadGrant(order.id, order.productSlug);
+    const url = downloadUrl(request, grant.token);
     let emailSent = false;
     try {
       await sendDownloadRenewalEmail({
@@ -36,16 +29,28 @@ export async function POST(request: Request) {
         productTitle: order.productTitle,
         orderId: order.id,
         downloadUrl: url,
-        expiresAt: verified?.expiresAt ?? Date.now(),
+        expiresAt: grant.expiresAt.getTime(),
       });
       emailSent = true;
     } catch {
-      // 화면에서 새 주소를 바로 제공하므로 이메일 장애가 재발급 자체를 막지 않습니다.
+      await prisma.jobLedger.upsert({
+        where: { jobKey: `download-email:${order.id}:${grant.expiresAt.getTime()}` },
+        create: {
+          jobKey: `download-email:${order.id}:${grant.expiresAt.getTime()}`,
+          jobType: "download_email",
+          payload: { orderId: order.id, url },
+        },
+        update: {},
+      });
     }
-
     return Response.json({ productTitle: order.productTitle, downloadUrl: url, emailSent });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "다운로드 주소 재발급 중 문제가 발생했습니다.";
-    return Response.json({ error: message }, { status: 500 });
+    const message =
+      error instanceof z.ZodError
+        ? "주문번호와 이메일 인증 정보를 확인해 주세요."
+        : error instanceof Error
+          ? error.message
+          : "다운로드 주소 재발급 중 문제가 발생했습니다.";
+    return Response.json({ error: message }, { status: error instanceof z.ZodError ? 400 : 500 });
   }
 }
