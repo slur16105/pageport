@@ -806,7 +806,7 @@ footer small {
   padding: 55px 0 100px;
 }
 .policy-page .eyebrow {
-  margin-top: 70px;
+  margin-top: 0;
 }
 .policy-page h1 {
   margin-bottom: 35px;
@@ -1540,6 +1540,9 @@ footer small {
 .reissue-page {
   min-height: 100vh;
   background: #e8dfd1;
+}
+.reissue-page .site-header {
+  background: #fffaf0;
 }
 .reissue-header {
   height: 76px;

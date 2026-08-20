@@ -23,3 +23,16 @@ test("구매 파일 다시 받기와 관리자 로그인 화면이 열린다", a
   await page.goto("/admin");
   await expect(page.getByRole("heading", { name: "관리자 로그인" })).toBeVisible();
 });
+
+test("상품 카테고리 필터와 정책 페이지의 공통 메뉴가 동작한다", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "업무·생산성" }).click();
+  await expect(page.getByRole("button", { name: "업무·생산성" })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".product-card")).toHaveCount(2);
+
+  await page.getByRole("link", { name: "이용약관" }).click();
+  await expect(page).toHaveURL(/\/terms/);
+  await expect(page.getByRole("banner")).toBeVisible();
+  await expect(page.getByRole("contentinfo")).toBeVisible();
+  await expect(page.getByRole("link", { name: "페이지포트 홈" }).first()).toBeVisible();
+});

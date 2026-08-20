@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { SiteFooter } from "../../../components/SiteFooter";
+import { SiteHeader } from "../../../components/SiteHeader";
 import { ReissueDownloadForm } from "./ReissueDownloadForm";
 
 export const metadata: Metadata = {
@@ -10,12 +11,7 @@ export const metadata: Metadata = {
 export default function ReissueDownloadPage() {
   return (
     <main className="reissue-page">
-      <header className="reissue-header">
-        <Link className="brand" href="/">
-          PAGEPORT<span>.</span>
-        </Link>
-        <span>구매 파일 다시 받기</span>
-      </header>
+      <SiteHeader />
       <section className="reissue-shell">
         <div className="reissue-copy">
           <p className="eyebrow">RE-DOWNLOAD</p>
@@ -28,6 +24,7 @@ export default function ReissueDownloadPage() {
         </div>
         <ReissueDownloadForm />
       </section>
+      <SiteFooter />
     </main>
   );
 }

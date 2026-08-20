@@ -1,26 +1,15 @@
 import { listPublishedProducts } from "../lib/catalog-products";
+import { ProductCatalog } from "../components/ProductCatalog";
+import { SiteFooter } from "../components/SiteFooter";
+import { SiteHeader } from "../components/SiteHeader";
 
 export const dynamic = "force-dynamic";
-
-const categories = ["전체", "업무·생산성", "공부·교육", "디자인", "돈관리", "생활", "취미"];
 
 export default async function Home() {
   const products = await listPublishedProducts();
   return (
     <main>
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="페이지포트 홈">
-          PAGEPORT<span>.</span>
-        </a>
-        <nav aria-label="주요 메뉴">
-          <a href="#products">PDF 둘러보기</a>
-          <a href="#guide">구매 방법</a>
-          <a href="#faq">자주 묻는 질문</a>
-        </nav>
-        <a className="header-button" href="/downloads/reissue">
-          구매 파일 다시 받기
-        </a>
-      </header>
+      <SiteHeader />
 
       <section className="hero" id="top">
         <div className="hero-copy">
@@ -73,45 +62,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="category-bar" aria-label="상품 카테고리">
-        {categories.map((category, index) => (
-          <button className={index === 0 ? "active" : ""} type="button" key={category}>
-            {category}
-          </button>
-        ))}
-      </section>
-
-      <section className="products-section" id="products">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">PAGEPORT의 첫 컬렉션</p>
-            <h2>업무와 생활을 가볍게</h2>
-          </div>
-          <span>상품 하나씩 바로 구매</span>
-        </div>
-        <div className="product-grid">
-          {products.map((product) => (
-            <a className="product-card" href={`/products/${product.slug}`} key={product.title}>
-              <div className={`product-cover ${product.accent}`}>
-                <span>{product.category}</span>
-                <b>{product.mark}</b>
-                <div className="cover-lines" />
-              </div>
-              <div className="product-info">
-                <small>
-                  {product.seller} · {product.pages}쪽
-                </small>
-                <h3>{product.title}</h3>
-                <p>{product.description}</p>
-                <div className="price-row">
-                  <strong>{product.price}</strong>
-                  <span aria-hidden="true">→</span>
-                </div>
-              </div>
-            </a>
-          ))}
-        </div>
-      </section>
+      <ProductCatalog products={products} />
 
       <section className="how-section" id="guide">
         <div className="how-title">
@@ -206,19 +157,7 @@ export default async function Home() {
         </div>
       </section>
 
-      <footer>
-        <a className="brand" href="#top">
-          PAGEPORT<span>.</span>
-        </a>
-        <p>전문 지식이 오가는 디지털 문서 마켓</p>
-        <div>
-          <a href="/terms">이용약관</a>
-          <a href="/privacy">개인정보처리방침</a>
-          <a href="/refund-policy">환불 안내</a>
-          <a href="/downloads/reissue">파일 다시 받기</a>
-        </div>
-        <small>현재는 공식 시험 결제 환경입니다. 실제 금액은 청구되지 않으며 상품 정보는 출시 준비용 샘플입니다.</small>
-      </footer>
+      <SiteFooter />
     </main>
   );
 }
