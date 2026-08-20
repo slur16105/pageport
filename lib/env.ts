@@ -8,6 +8,8 @@ const serverSchema = z.object({
   DIRECT_URL: z.string().min(1).optional(),
   NEXT_PUBLIC_SUPABASE_URL: z.url(),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: z.string().min(20),
+  // 새 publishable 키는 JWT가 아니므로 TUS 이어올리기 요청에는 Legacy anon JWT를 따로 사용합니다.
+  SUPABASE_TUS_ANON_KEY: z.string().min(20).optional(),
   SUPABASE_SECRET_KEY: z.string().min(20),
   RESEND_API_KEY: z.string().startsWith("re_"),
   RESEND_FROM_EMAIL: z.string().min(3),

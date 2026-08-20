@@ -1,26 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Supabase와 데이터베이스를 실제로 호출하지 않고 업로드 전용 서명 발급 흐름을 검사합니다.
+// Supabase와 데이터베이스를 실제로 호출하지 않고 TUS용 JWT와 일회용 업로드 허가 흐름을 검사합니다.
 const mocks = vi.hoisted(() => ({
   isAdminRequest: vi.fn(),
-  createSignedUploadUrl: vi.fn(),
   uploadTicketCreate: vi.fn(),
+  envConfig: {
+    NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co",
+    SUPABASE_TUS_ANON_KEY: "header.payload.signature" as string | undefined,
+  },
 }));
 
 vi.mock("../lib/admin-auth", () => ({ isAdminRequest: mocks.isAdminRequest }));
 vi.mock("../lib/env", () => ({
-  env: () => ({ NEXT_PUBLIC_SUPABASE_URL: "https://project.supabase.co" }),
+  env: () => mocks.envConfig,
 }));
 vi.mock("../lib/prisma", () => ({
   prisma: { uploadTicket: { create: mocks.uploadTicketCreate } },
 }));
 vi.mock("../lib/supabase", () => ({
   PRIVATE_PDF_BUCKET: "product-pdfs",
-  supabaseAdmin: () => ({
-    storage: {
-      from: () => ({ createSignedUploadUrl: mocks.createSignedUploadUrl }),
-    },
-  }),
 }));
 
 import { POST } from "../app/api/admin/uploads/ticket/route";
@@ -37,29 +35,29 @@ describe("관리자 PDF 업로드 권한", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.isAdminRequest.mockResolvedValue(true);
-    mocks.createSignedUploadUrl.mockResolvedValue({ data: { token: "signed-upload-token" }, error: null });
     mocks.uploadTicketCreate.mockResolvedValue({});
+    mocks.envConfig.SUPABASE_TUS_ANON_KEY = "header.payload.signature";
   });
 
-  it("공개 키 대신 파일 전용 서명을 브라우저에 전달한다", async () => {
+  it("TUS Bearer용 anon JWT와 Storage 직결 주소를 브라우저에 전달한다", async () => {
     const response = await POST(ticketRequest());
     const body = (await response.json()) as Record<string, unknown>;
 
     expect(response.status).toBe(200);
-    expect(body.signature).toBe("signed-upload-token");
-    expect(body.authorization).toBeUndefined();
-    expect(mocks.createSignedUploadUrl).toHaveBeenCalledWith(expect.stringMatching(/^incoming\/.+\.pdf$/), {
-      upsert: true,
-    });
+    expect(body.authorization).toBe("header.payload.signature");
+    expect(body.endpoint).toBe("https://project.storage.supabase.co/storage/v1/upload/resumable");
+    expect(body.signature).toBeUndefined();
     expect(mocks.uploadTicketCreate).toHaveBeenCalledOnce();
   });
 
-  it("서명 발급이 실패하면 사용할 수 없는 업로드 장부를 만들지 않는다", async () => {
-    mocks.createSignedUploadUrl.mockResolvedValue({ data: null, error: { message: "signing failed" } });
+  it("TUS용 JWT가 없으면 업로드 장부를 만들지 않고 쉬운 오류 코드를 보낸다", async () => {
+    mocks.envConfig.SUPABASE_TUS_ANON_KEY = undefined;
 
     const response = await POST(ticketRequest());
+    const body = (await response.json()) as Record<string, unknown>;
 
-    expect(response.status).toBe(500);
+    expect(response.status).toBe(503);
+    expect(body.code).toBe("TUS_UPLOAD_AUTH_INVALID");
     expect(mocks.uploadTicketCreate).not.toHaveBeenCalled();
   });
 });
