@@ -1,7 +1,7 @@
 // 이 파일은 결제·재다운로드·관리자 로그인에 사용할 6자리 인증번호를 이메일로 보냅니다.
 import { z } from "zod";
 import { verificationCodeEmail } from "../../../../emails/verification-code";
-import { getAdminEmail } from "../../../../lib/admin-auth";
+import { isAdminEmail } from "../../../../lib/admin-auth";
 import { hashVerificationValue } from "../../../../lib/email-verification";
 import { env } from "../../../../lib/env";
 import { prisma } from "../../../../lib/prisma";
@@ -19,7 +19,7 @@ export async function POST(request: Request) {
   try {
     const input = inputSchema.parse(await request.json());
     const email = input.email.trim().toLowerCase();
-    if (input.purpose === "admin" && email !== getAdminEmail()) {
+    if (input.purpose === "admin" && !isAdminEmail(email)) {
       return Response.json({ error: "관리자 이메일을 확인해 주세요." }, { status: 403 });
     }
     // 자동화 프로그램의 대량 발송 요청인지 확인해 이메일 서비스 악용을 막습니다.

@@ -12,6 +12,7 @@ const serverSchema = z.object({
   RESEND_API_KEY: z.string().startsWith("re_"),
   RESEND_FROM_EMAIL: z.string().min(3),
   ADMIN_EMAIL: z.email(),
+  ADMIN_EMAILS: z.string().optional(),
   EMAIL_VERIFICATION_SECRET: z.string().min(24),
   DOWNLOAD_LINK_SECRET: z.string().min(24),
   ADMIN_SESSION_SECRET: z.string().min(24),

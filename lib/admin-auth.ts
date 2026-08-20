@@ -5,8 +5,19 @@ import { env } from "./env";
 export const ADMIN_COOKIE = "pageport_admin";
 const SESSION_MS = 12 * 60 * 60_000;
 
-export function getAdminEmail() {
-  return env().ADMIN_EMAIL.trim().toLowerCase();
+export function getAdminEmails() {
+  const config = env();
+  return Array.from(
+    new Set(
+      [config.ADMIN_EMAIL, ...(config.ADMIN_EMAILS?.split(",") ?? [])]
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  );
+}
+
+export function isAdminEmail(email: string) {
+  return getAdminEmails().includes(email.trim().toLowerCase());
 }
 
 function sign(value: string) {
@@ -14,9 +25,11 @@ function sign(value: string) {
   return createHmac("sha256", env().ADMIN_SESSION_SECRET).update(`admin:${value}`).digest("base64url");
 }
 
-export async function createAdminSession() {
+export async function createAdminSession(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!isAdminEmail(normalizedEmail)) throw new Error("등록되지 않은 관리자 이메일입니다.");
   const expiresAt = Date.now() + SESSION_MS;
-  const payload = `${getAdminEmail()}.${expiresAt}`;
+  const payload = `${normalizedEmail}.${expiresAt}`;
   return { token: `${payload}.${sign(payload)}`, expiresAt };
 }
 
@@ -27,7 +40,7 @@ export async function verifyAdminSession(token: string | undefined) {
   const signature = parts.pop();
   const expiresAt = Number(parts.pop());
   const email = parts.join(".");
-  if (!signature || email !== getAdminEmail() || !Number.isInteger(expiresAt) || expiresAt <= Date.now()) return false;
+  if (!signature || !isAdminEmail(email) || !Number.isInteger(expiresAt) || expiresAt <= Date.now()) return false;
   const expected = sign(`${email}.${expiresAt}`);
   return expected.length === signature.length && timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
 }
