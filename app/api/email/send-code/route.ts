@@ -32,6 +32,16 @@ export async function POST(request: Request) {
       return Response.json({ error: "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요." }, { status: 429 });
     }
 
+    if (input.purpose === "redownload") {
+      // 재다운로드 인증번호는 실제 결제가 완료된 이메일에만 보냅니다.
+      // 구매 여부는 화면 응답에 넣지 않아 다른 사람이 이메일만으로 구매 기록을 추측하지 못하게 합니다.
+      const purchase = await prisma.order.findFirst({
+        where: { buyerEmail: email, status: { in: ["paid", "test_paid"] } },
+        select: { id: true },
+      });
+      if (!purchase) return Response.json({ sent: true, expiresInSeconds: CODE_LIFETIME_MS / 1000 });
+    }
+
     // 같은 사람이 연속으로 메일을 보내지 못하게 최소 1분 간격을 둡니다.
     const existing = await prisma.emailVerification.findUnique({
       where: { email_purpose: { email, purpose: input.purpose } },

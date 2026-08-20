@@ -1,6 +1,7 @@
 // 주소의 영문 상품명(slug)에 맞는 상품을 찾아 상세 정보와 구매 시작 화면을 보여주는 페이지입니다.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { SiteHeader } from "../../../components/SiteHeader";
 import { StructuredData } from "../../../components/StructuredData";
 import { getPublishedProduct } from "../../../lib/catalog-products";
 import { PurchaseForm } from "./PurchaseForm";
@@ -77,19 +78,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
         ]}
       />
       {/* 상세 화면에서 상품 목록·구매 안내·내 구매함으로 이동하는 상단 메뉴입니다. */}
-      <header className="site-header detail-header">
-        <a className="brand" href="/" aria-label="페이지포트 홈">
-          PAGEPORT<span>.</span>
-        </a>
-        <nav aria-label="주요 메뉴">
-          <a href="/#products">PDF 둘러보기</a>
-          <a href="/#guide">이용 방법</a>
-          <a href="/#faq">구매 안내</a>
-        </nav>
-        <a className="header-button" href="/downloads/reissue">
-          내 구매함
-        </a>
-      </header>
+      <SiteHeader />
 
       <div className="detail-shell">
         {/* 상품 미리보기와 가격을 확인한 뒤 이메일을 입력해 구매를 시작하는 핵심 영역입니다. */}

@@ -3,9 +3,11 @@
 // 운영자가 이메일로 본인 확인한 뒤 상품을 등록·수정하고 주문과 환불을 관리하는 관리자 화면입니다.
 
 import { type FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import * as tus from "tus-js-client";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import { FileUp, RefreshCw, ShieldCheck } from "lucide-react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { ExternalLink, FileUp, Menu, RefreshCw, ShieldCheck, X } from "lucide-react";
 import { TurnstileWidget } from "../../components/TurnstileWidget";
 import { PRODUCT_CATEGORIES, PRODUCT_LIMITS, productIncludeItems } from "../../lib/product-limits";
 
@@ -61,6 +63,43 @@ const emptyForm: ProductForm = {
 };
 
 const statusLabels: Record<string, string> = { draft: "작성 중", published: "판매 중", paused: "판매 중지" };
+
+type AdminView = "products" | "orders";
+
+function AdminManagementMenu({
+  view,
+  className,
+  label,
+  onProducts,
+  onOrders,
+}: {
+  view: AdminView;
+  className: string;
+  label: string;
+  onProducts: () => void;
+  onOrders: () => void;
+}) {
+  // PC 상단 메뉴와 모바일 패널이 같은 메뉴 이름·활성 상태·동작을 공유합니다.
+  return (
+    <nav className={className} aria-label={label}>
+      <button className={view === "products" ? "active" : ""} type="button" onClick={onProducts}>
+        상품 관리
+      </button>
+      <button className={view === "orders" ? "active" : ""} type="button" onClick={onOrders}>
+        주문 관리
+      </button>
+    </nav>
+  );
+}
+
+function StorefrontLink({ className, onClick }: { className?: string; onClick?: () => void }) {
+  return (
+    <Link className={className} href="/" target="_blank" rel="noreferrer" onClick={onClick}>
+      쇼핑몰로 이동
+      <ExternalLink size={15} aria-hidden="true" />
+    </Link>
+  );
+}
 
 function FieldLimit({ current, maximum, unit = "자" }: { current: number; maximum: number; unit?: string }) {
   const nearLimit = current >= maximum * 0.8;
@@ -120,7 +159,8 @@ export function AdminDashboard() {
   const [sent, setSent] = useState(false);
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
-  const [view, setView] = useState<"products" | "orders">("products");
+  const [view, setView] = useState<AdminView>("products");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [form, setForm] = useState<ProductForm>(emptyForm);
   const [editing, setEditing] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -357,9 +397,9 @@ export function AdminDashboard() {
     return (
       <main className="admin-page">
         <section className="admin-login">
-          <a className="brand" href="/">
+          <Link className="brand" href="/">
             PAGEPORT<span>.</span>
-          </a>
+          </Link>
           <p className="eyebrow">ADMIN</p>
           <h1>관리자 로그인</h1>
           <p>등록된 관리자 이메일로 인증번호를 받아 주세요.</p>
@@ -405,24 +445,74 @@ export function AdminDashboard() {
     <main className="admin-page">
       {/* 로그인 후에는 상품 관리와 주문 관리를 상단 메뉴로 오갈 수 있습니다. */}
       <header className="admin-header">
-        <a className="brand" href="/">
+        <Link className="brand" href="/">
           PAGEPORT<span>.</span>
-        </a>
-        <nav className="admin-nav" aria-label="관리자 메뉴">
-          <button className={view === "products" ? "active" : ""} type="button" onClick={() => setView("products")}>
-            상품 관리
-          </button>
-          <button className={view === "orders" ? "active" : ""} type="button" onClick={openOrders}>
-            주문 관리
-          </button>
-        </nav>
-        <div>
-          <a href="/" target="_blank">
-            쇼핑몰 보기
-          </a>
+        </Link>
+        <AdminManagementMenu
+          view={view}
+          className="admin-nav admin-desktop-nav"
+          label="관리자 메뉴"
+          onProducts={() => setView("products")}
+          onOrders={openOrders}
+        />
+        <div className="admin-header-actions">
+          <StorefrontLink className="admin-store-link" />
           <button type="button" onClick={logout}>
             로그아웃
           </button>
+        </div>
+        <div className="admin-mobile-controls">
+          <Dialog.Root open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+            <Dialog.Trigger asChild>
+              <button className="admin-menu-trigger" type="button" aria-label="관리자 메뉴 열기">
+                <Menu size={21} aria-hidden="true" />
+              </button>
+            </Dialog.Trigger>
+            <Dialog.Portal>
+              <Dialog.Overlay className="admin-menu-overlay" />
+              <Dialog.Content className="admin-menu-panel" aria-describedby={undefined}>
+                <div className="admin-menu-panel-header">
+                  <Dialog.Title>관리자 메뉴</Dialog.Title>
+                  <Dialog.Close asChild>
+                    <button type="button" aria-label="관리자 메뉴 닫기">
+                      <X size={21} aria-hidden="true" />
+                    </button>
+                  </Dialog.Close>
+                </div>
+                <section className="admin-menu-section" aria-labelledby="admin-management-label">
+                  <p id="admin-management-label">관리 메뉴</p>
+                  <AdminManagementMenu
+                    view={view}
+                    className="admin-mobile-nav"
+                    label="모바일 관리자 메뉴"
+                    onProducts={() => {
+                      setView("products");
+                      setMobileMenuOpen(false);
+                    }}
+                    onOrders={() => {
+                      openOrders();
+                      setMobileMenuOpen(false);
+                    }}
+                  />
+                </section>
+                <section className="admin-menu-secondary" aria-labelledby="admin-secondary-label">
+                  <p id="admin-secondary-label">기타 기능</p>
+                  <StorefrontLink onClick={() => setMobileMenuOpen(false)} />
+                </section>
+                <div className="admin-menu-logout">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      void logout();
+                    }}
+                  >
+                    로그아웃
+                  </button>
+                </div>
+              </Dialog.Content>
+            </Dialog.Portal>
+          </Dialog.Root>
         </div>
       </header>
       {view === "products" ? (

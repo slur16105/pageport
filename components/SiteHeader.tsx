@@ -13,7 +13,7 @@ export function SiteHeader() {
         <Link href="/#faq">자주 묻는 질문</Link>
       </nav>
       <Link className="header-button" href="/downloads/reissue" aria-label="구매한 PDF 파일 다시 받기">
-        파일 다시 받기
+        PDF 다시 받기
       </Link>
     </header>
   );

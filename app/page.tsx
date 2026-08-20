@@ -101,15 +101,15 @@ export default async function Home() {
       <section className="seller-section" id="sell">
         {/* 판매자 입점은 아직 시작 전임을 분명히 밝히고, 2차 출시 예정 정책만 미리 안내합니다. */}
         <div className="seller-copy">
-          <p className="eyebrow">2차 출시에서 준비합니다</p>
+          <p className="eyebrow">판매자 기능은 2차 출시 예정</p>
           <h2>
-            사업자 판매자
+            사업자 파트너 입점을
             <br />
-            입점 준비 중
+            준비하고 있어요
           </h2>
           <p>
-            1차에는 PAGEPORT 운영 상품만 판매합니다. 이후 사업자 확인, 상품 검수, 수수료 15%, 월 2회 정산 기능을 갖춰
-            입점을 시작합니다.
+            현재는 PAGEPORT 운영 상품만 판매합니다. 사업자 확인, 상품 검수, 수수료 15%, 월 2회 정산 기능을 충분히 준비한
+            뒤 파트너 입점을 시작합니다.
           </p>
           <span className="primary-button light">아직 신청을 받지 않습니다</span>
         </div>
