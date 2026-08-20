@@ -119,3 +119,30 @@ test("모바일에서도 메뉴와 상품 3열이 유지된다", async ({ page }
     .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(" ").length);
   expect(columnCount).toBe(3);
 });
+
+test("검색 노출은 보류하면서 SNS 공유와 구조화 설명을 제공한다", async ({ page }) => {
+  // 아직 검색 결과에는 등록하지 않지만, 링크 공유 미리보기와 AI용 설명은 미리 준비되어 있어야 합니다.
+  await page.goto("/");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /opengraph-image/);
+  await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute("content", "summary_large_image");
+  const homeImage = await page.request.get("/opengraph-image");
+  expect(homeImage.ok()).toBe(true);
+  expect(homeImage.headers()["content-type"]).toContain("image/png");
+
+  const homeStructuredData = await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(homeStructuredData.join(" ")).toContain('"@type":"WebSite"');
+  expect(homeStructuredData.join(" ")).toContain('"@type":"FAQPage"');
+
+  await page.goto("/products/weekly-work-planner");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute("href", /\/products\/weekly-work-planner$/);
+  const productStructuredData = await page.locator('script[type="application/ld+json"]').allTextContents();
+  expect(productStructuredData.join(" ")).toContain('"@type":"Product"');
+  expect(productStructuredData.join(" ")).toContain('"priceCurrency":"KRW"');
+  const productImage = await page.request.get("/products/weekly-work-planner/opengraph-image");
+  expect(productImage.ok()).toBe(true);
+  expect(productImage.headers()["content-type"]).toContain("image/png");
+
+  const robotsResponse = await page.request.get("/robots.txt");
+  expect(await robotsResponse.text()).not.toContain("Disallow: /\n");
+});
