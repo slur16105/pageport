@@ -33,6 +33,11 @@ test("상품 카테고리 필터와 정책 페이지의 공통 메뉴가 동작�
   await expect(page.getByRole("button", { name: "업무·생산성" })).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator(".product-card")).toHaveCount(2);
 
+  // 가입 화면이 없는 서비스에 맞는 질문과 구매내역 확인 안내가 노출되어야 합니다.
+  await expect(page.getByText("회원가입 없이 어떻게 이용하나요?", { exact: true })).toBeVisible();
+  await expect(page.getByText("구매내역은 어떻게 확인하나요?", { exact: true })).toBeVisible();
+  await expect(page.getByText("다운로드 주소가 만료되면 다시 결제해야 하나요?", { exact: true })).toBeVisible();
+
   await page.getByRole("link", { name: "이용약관" }).click();
   await expect(page).toHaveURL(/\/terms/);
   await expect(page.getByRole("banner")).toBeVisible();
@@ -84,6 +89,11 @@ test("서비스 소개에서 구매자와 관리자 흐름으로 이동할 수 �
   // 소개 화면은 일반 구매 메뉴에 노출하지 않지만, 검토자가 주소로 직접 열면 구매자·관리자 흐름을 확인할 수 있습니다.
   await page.goto("/about");
   await expect(page).toHaveURL(/\/about/);
+  await expect(page.getByText(/일반 구매자 화면이 아닙니다/)).toBeVisible();
+  await expect(page.getByText(/서비스 확인을 위한 안내서입니다/)).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "검토 대상 화면" })).toBeVisible();
+  await expect(page.getByRole("navigation", { name: "주요 메뉴" })).toHaveCount(0);
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   await expect(page.getByRole("heading", { name: /계정은 가볍게/ })).toBeVisible();
   await expect(page.getByRole("heading", { name: "구매와 운영은 이렇게 이어집니다." })).toBeVisible();
   await expect(page.getByRole("link", { name: "PDF 상품 보기" })).toHaveAttribute("href", "/#products");

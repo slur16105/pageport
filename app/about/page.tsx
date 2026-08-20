@@ -1,12 +1,11 @@
-// PAGEPORT가 어떤 원칙과 흐름으로 운영되는지 구매자·관리자 관점에서 한눈에 설명하는 서비스 소개 페이지입니다.
+// PAGEPORT를 구매하거나 검토하는 사람이 구매자·관리자 흐름을 한눈에 확인하는 서비스 검토 전용 페이지입니다.
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SiteFooter } from "../../components/SiteFooter";
-import { SiteHeader } from "../../components/SiteHeader";
 
 export const metadata: Metadata = {
-  title: "서비스 소개 | PAGEPORT",
-  description: "회원 계정 없이 이메일 인증으로 구매와 재다운로드를 연결하는 PAGEPORT의 운영 구조를 소개합니다.",
+  title: "서비스 검토 안내 | PAGEPORT",
+  description: "PAGEPORT의 구매자·관리자 화면과 이메일 인증, 결제, 다운로드 운영 구조를 확인하는 검토용 안내입니다.",
+  robots: { index: false, follow: false },
 };
 
 const buyerSteps = [
@@ -28,11 +27,33 @@ const adminSteps = [
 export default function AboutPage() {
   return (
     <main className="about-page">
-      <SiteHeader />
+      <header className="review-header">
+        <div className="review-header-title">
+          <Link className="brand" href="/about" aria-label="페이지포트 서비스 검토 안내">
+            PAGEPORT<span>.</span>
+          </Link>
+          <b>SERVICE REVIEW</b>
+        </div>
+        <p>
+          <strong>검토용</strong> 일반 구매자 화면이 아닙니다.
+        </p>
+        <nav aria-label="검토 대상 화면">
+          <Link href="/">구매자 화면 ↗</Link>
+          <Link href="/admin">관리자 화면 ↗</Link>
+        </nav>
+      </header>
+
+      <section className="review-context" aria-label="페이지 용도 안내">
+        <strong>이 페이지는 서비스 확인을 위한 안내서입니다.</strong>
+        <p>
+          PAGEPORT의 구매·관리 구조를 검토하는 관계자를 위한 화면이며, PDF 구매는 아래 구매자 페이지에서 진행합니다.
+        </p>
+        <span>구매 기능 없음 · 검색 비노출</span>
+      </section>
 
       <section className="about-hero" aria-labelledby="about-title">
         <div className="about-hero-copy">
-          <p className="eyebrow">PAGEPORT SERVICE BLUEPRINT</p>
+          <p className="eyebrow">PAGEPORT SERVICE REVIEW BLUEPRINT</p>
           <h1 id="about-title">
             계정은 가볍게,
             <br />
@@ -64,12 +85,15 @@ export default function AboutPage() {
 
       <section className="about-entrances" aria-labelledby="entrance-title">
         <div className="about-section-title">
-          <p className="eyebrow">SERVICE ENTRANCES</p>
-          <h2 id="entrance-title">이용 목적에 맞는 화면으로 이동하세요.</h2>
+          <p className="eyebrow">SCREENS TO REVIEW</p>
+          <h2 id="entrance-title">검토할 실제 화면을 선택하세요.</h2>
+          <p>
+            아래 두 화면은 역할이 다릅니다. 구매자는 상품과 파일을 이용하고, 지정된 관리자는 상품·주문을 운영합니다.
+          </p>
         </div>
         <div className="about-entrance-grid">
           <article className="about-entrance-card buyer">
-            <span>BUYER</span>
+            <span>REVIEW TARGET 01 · BUYER</span>
             <h3>구매자 페이지</h3>
             <p>PDF를 둘러보고 구매하거나, 이전에 구매한 파일을 이메일 인증으로 다시 받을 수 있습니다.</p>
             <div className="about-card-actions">
@@ -82,7 +106,7 @@ export default function AboutPage() {
             </div>
           </article>
           <article className="about-entrance-card admin">
-            <span>ADMIN</span>
+            <span>REVIEW TARGET 02 · ADMIN</span>
             <h3>관리자 페이지</h3>
             <p>운영자만 이메일 인증 후 상품 등록, 주문 확인, 다운로드 관리와 환불 처리를 할 수 있습니다.</p>
             <div className="about-card-actions">
@@ -184,7 +208,13 @@ export default function AboutPage() {
         </ul>
       </section>
 
-      <SiteFooter />
+      <footer className="review-footer">
+        <div>
+          <strong>PAGEPORT SERVICE REVIEW</strong>
+          <p>구매자 화면과 관리자 화면의 연결 구조를 확인하기 위한 비공개 검색 검토 페이지입니다.</p>
+        </div>
+        <Link href="/">구매자 홈으로 돌아가기 →</Link>
+      </footer>
     </main>
   );
 }
